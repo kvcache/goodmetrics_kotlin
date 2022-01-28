@@ -7,7 +7,6 @@ import io.goodmetrics.histogram
 import io.goodmetrics.measurement
 import io.goodmetrics.metricsRequest
 import io.goodmetrics.statisticSet
-import io.grpc.ManagedChannelBuilder
 import io.grpc.netty.GrpcSslContexts
 import io.grpc.netty.NettyChannelBuilder
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory
@@ -37,7 +36,8 @@ class Client private constructor(
                     unixNanos = System.currentTimeMillis() * 1000000
                     dimensions["ordinal"] = dimension { number = 16 }
                     dimensions["possible"] = dimension { boolean = true }
-                    measurements["some_value"] = measurement { gauge = 42.125 }
+                    measurements["some_ivalue"] = measurement { inumber = 42 }
+                    measurements["some_fvalue"] = measurement { fnumber = 42.125 }
                     measurements["some_stat"] = measurement { statisticSet = statisticSet {
                         minimum = 1.0
                         maximum = 2.0

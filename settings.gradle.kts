@@ -1,2 +1,5 @@
-rootProject.name = "good_metrics_kotlin"
-include("lib")
+rootProject.name = "goodmetrics_kotlin"
+include(
+    ":kotlin:lib",
+    ":kotlin:jmh",
+)
