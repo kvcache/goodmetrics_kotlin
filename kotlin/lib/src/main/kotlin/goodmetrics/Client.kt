@@ -1,5 +1,7 @@
 package goodmetrics
 
+import io.goodmetrics.Datum
+import io.goodmetrics.Dimension
 import io.goodmetrics.MetricsGrpcKt
 import io.goodmetrics.datum
 import io.goodmetrics.dimension
@@ -13,6 +15,7 @@ import io.netty.handler.ssl.util.InsecureTrustManagerFactory
 
 class Client private constructor(
     private val stub: MetricsGrpcKt.MetricsCoroutineStub,
+    private val prescientDimensions: Map<String, Dimension> = mapOf(),
 ) {
     companion object {
         fun connect(goodmetricsHostname: String = "localhost", port: Int = 9573): Client {
@@ -27,7 +30,17 @@ class Client private constructor(
         }
     }
 
-    suspend fun sendMetrics() {
+    suspend fun sendMetrics(batch: List<Metrics>) {
+        val request = metricsRequest {
+            sharedDimensions.putAll(prescientDimensions)
+            batch.forEach {
+                metrics.add(it.toProto())
+            }
+        }
+        stub.sendMetrics(request)
+    }
+
+    suspend fun sendToyMetrics() {
         stub.sendMetrics(
             metricsRequest {
                 sharedDimensions["host"] = dimension { string = "my_laptop" }
@@ -62,4 +75,42 @@ class Client private constructor(
             }
         )
     }
+}
+
+internal fun Metrics.toProto(): Datum = datum {
+    metric = name
+    unixNanos = timestampMillis * 1000000
+
+    for ((k, v) in metricDimensions) {
+        dimensions[k] = when (v) {
+            is Boolean -> {
+                dimension { boolean = v }
+            }
+            is Long -> {
+                dimension { number = v }
+            }
+            is String -> {
+                dimension { string = v }
+            }
+            else -> {
+                throw IllegalArgumentException("unhandled dimension type: %s".format(v.javaClass.name))
+            }
+        }
+    }
+
+    for ((k, v) in metricMeasurements) {
+        measurements[k] = when (v) {
+            is Long -> {
+                measurement { inumber = v }
+            }
+            is Double -> {
+                measurement { fnumber = v }
+            }
+            // TODO: The preaggregated types
+            else -> {
+                throw IllegalArgumentException("unhandled measurement type: %s".format(v.javaClass.name))
+            }
+        }
+    }
+    measurements
 }

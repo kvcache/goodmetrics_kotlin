@@ -9,7 +9,7 @@ class ClientTest {
     @Test fun someLibraryMethodReturnsTrue() {
         runBlocking {
             val client = Client.connect("localhost")
-            client.sendMetrics()
+            client.sendToyMetrics()
         }
     }
 }

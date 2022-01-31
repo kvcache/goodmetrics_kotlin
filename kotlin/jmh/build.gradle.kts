@@ -18,10 +18,10 @@ dependencies {
     jmhImplementation(platform("org.jetbrains.kotlin:kotlin-bom"))
     jmhImplementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 
-//    jmhImplementation("org.openjdk.jmh:jmh-core:1.34")
-//    jmhImplementation("org.openjdk.jmh:jmh-generator-annprocess:1.34")
+    jmhImplementation("org.openjdk.jmh:jmh-core:1.34")
+    jmhImplementation("org.openjdk.jmh:jmh-generator-annprocess:1.34")
 
-    jmhImplementation(project(":kotlin:lib"))
+    implementation(project(":kotlin:lib"))
 }
 
 kotlin {

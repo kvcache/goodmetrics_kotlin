@@ -1,32 +1,32 @@
 package goodmetrics
 
-enum class TimestampAt {
-    // Stamp the metric at the start
-    Start,
-    // Stamp the metric at the end
-    End,
-}
-
-class MetricsConfiguration private constructor() {
-    companion object {
-        var epochMillis: () -> Long = System::currentTimeMillis
-    }
-}
-
-class GMetrics(
-    stampAt: TimestampAt = TimestampAt.Start,
+/**
+ * Not thread safe.
+ */
+class Metrics internal constructor(
+    internal var name: String,
+    internal var timestampMillis: Long,
 ) {
-    private val startTime: Long = when (stampAt) {
-        TimestampAt.Start -> MetricsConfiguration.epochMillis()
-        TimestampAt.End -> -1
-    }
-    private val intMeasurements: MutableMap<String, Long> = mutableMapOf()
+    internal val metricMeasurements: MutableMap<String, Any> = mutableMapOf()
+    internal val metricDimensions: MutableMap<String, Any> = mutableMapOf()
 
-    fun setIntMeasurement(measurement: String, value: Int) {
-        intMeasurements[measurement] = value.toLong()
+    fun dimensionBool(dimension: String, value: Boolean) {
+        metricDimensions[dimension] = value
     }
 
-    fun setLongMeasurement(measurement: String, value: Long) {
-        intMeasurements[measurement] = value
+    fun dimensionNumber(dimension: String, value: Long) {
+        metricDimensions[dimension] = value
+    }
+
+    fun dimensionString(dimension: String, value: String) {
+        metricDimensions[dimension] = value
+    }
+
+    fun measureI(name: String, value: Long) {
+        metricMeasurements[name] = value
+    }
+
+    fun measureF(name: String, value: Double) {
+        metricMeasurements[name] = value
     }
 }
