@@ -4,8 +4,9 @@ package goodmetrics
  * Not thread safe.
  */
 class Metrics internal constructor(
-    internal var name: String,
+    internal val name: String,
     internal var timestampMillis: Long,
+    internal val startNanoTime: Long,
 ) {
     internal val metricMeasurements: MutableMap<String, Any> = mutableMapOf()
     internal val metricDimensions: MutableMap<String, Any> = mutableMapOf()
@@ -26,7 +27,15 @@ class Metrics internal constructor(
         metricMeasurements[name] = value
     }
 
+    fun measureI(name: String, value: Int) {
+        metricMeasurements[name] = value.toLong()
+    }
+
     fun measureF(name: String, value: Double) {
         metricMeasurements[name] = value
+    }
+
+    fun measureF(name: String, value: Float) {
+        metricMeasurements[name] = value.toDouble()
     }
 }
