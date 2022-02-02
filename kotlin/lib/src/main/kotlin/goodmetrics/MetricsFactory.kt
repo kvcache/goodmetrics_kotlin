@@ -2,6 +2,7 @@
 
 package goodmetrics
 
+import goodmetrics.pipeline.MetricsSink
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
@@ -19,7 +20,9 @@ class MetricsConfiguration private constructor() {
     }
 }
 
-class MetricsFactory {
+class MetricsFactory(
+    private val sink: MetricsSink
+) {
     inline fun <T> record(name: String, stampAt: TimestampAt = TimestampAt.Start, block: (Metrics) -> T): T {
         contract {
             callsInPlace(block, InvocationKind.EXACTLY_ONCE)
