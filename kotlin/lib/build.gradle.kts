@@ -7,6 +7,7 @@ plugins {
 
     // Apply the java-library plugin for API and implementation separation.
     `java-library`
+    `maven-publish`
 
     idea
 }
@@ -80,6 +81,48 @@ protobuf {
             }
             it.builtins {
                 id("kotlin")
+            }
+        }
+    }
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("client") {
+            groupId = "io.goodmetrics"
+            artifactId = "client"
+            version = "0.1.0"
+
+            println("components:")
+            for (c in components) {
+                println("  ${c.name}")
+            }
+            from(components["kotlin"])
+
+            pom {
+                name.set("Good metrics")
+                description.set("A metrics recording library that is good")
+                url.set("https://github.com/WarriorOfWire/goodmetrics_kotlin/blob/main/README.md")
+                properties.set(mapOf(
+                ))
+                licenses {
+                    license {
+                        name.set("The Apache License, Version 2.0")
+                        url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
+                    }
+                }
+                developers {
+                    developer {
+                        id.set("warriorofwire")
+                        name.set("Kenny")
+                        email.set("3454741+WarriorOfWire@users.noreply.github.com")
+                    }
+                }
+                scm {
+                    connection.set("scm:git:git://github.com:WarriorOfWire/goodmetrics_kotlin.git")
+                    developerConnection.set("scm:git:ssh://git@github.com:WarriorOfWire/goodmetrics_kotlin.git")
+                    url.set("https://github.com/WarriorOfWire/goodmetrics_kotlin")
+                }
             }
         }
     }
