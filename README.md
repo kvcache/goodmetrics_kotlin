@@ -11,6 +11,21 @@ where you want to put the long-lived background job that emits metrics for your 
 # How to use
 Run [the goodmetrics server](https://github.com/WarriorOfWire/goodmetrics) on localhost.
 
+## Add dependency
+```kotlin
+repositories {
+    maven {
+        name = "jitpack"
+        setUrl("https://jitpack.io")
+    }
+}
+
+dependencies {
+    implementation("com.github.WarriorOfWire:goodmetrics_kotlin:$goodmetricsVersion")
+}
+```
+
+## Write code
 ```kotlin
 fun main() {
     val metricsBackgroundScope = CoroutineScope(Dispatchers.Default)
