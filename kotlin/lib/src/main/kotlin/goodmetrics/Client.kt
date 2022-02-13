@@ -1,7 +1,10 @@
 package goodmetrics
 
+import goodmetrics.pipeline.AggregatedBatch
+import goodmetrics.pipeline.Aggregation
 import io.goodmetrics.Datum
 import io.goodmetrics.Dimension
+import io.goodmetrics.Measurement
 import io.goodmetrics.MetricsGrpcKt
 import io.goodmetrics.datum
 import io.goodmetrics.dimension
@@ -35,6 +38,21 @@ class Client private constructor(
             sharedDimensions.putAll(prescientDimensions)
             batch.forEach {
                 metrics.add(it.toProto())
+            }
+        }
+        stub.sendMetrics(request)
+    }
+
+    suspend fun sendPreaggregatedMetrics(aggregatedBatches: List<AggregatedBatch>) {
+        val request = metricsRequest {
+            sharedDimensions.putAll(prescientDimensions)
+            for (aggregatedBatch in aggregatedBatches) {
+                for ((dimensionPosition, measurementMap) in aggregatedBatch.positions) {
+                    val templateDatum = dimensionPosition.initializeDatum(aggregatedBatch.timestampNanos, aggregatedBatch.metric)
+                    for ((measurement, aggregation) in measurementMap) {
+                        templateDatum.measurementsMap[measurement] = aggregation.toProto()
+                    }
+                }
             }
         }
         stub.sendMetrics(request)
@@ -82,20 +100,7 @@ internal fun Metrics.toProto(): Datum = datum {
     unixNanos = timestampMillis * 1000000
 
     for ((k, v) in metricDimensions) {
-        dimensions[k] = when (v) {
-            is Boolean -> {
-                dimension { boolean = v }
-            }
-            is Long -> {
-                dimension { number = v }
-            }
-            is String -> {
-                dimension { string = v }
-            }
-            else -> {
-                throw IllegalArgumentException("unhandled dimension type: %s".format(v.javaClass.name))
-            }
-        }
+        dimensions[k] = v.asDimension()
     }
 
     for ((k, v) in metricMeasurements) {
@@ -112,5 +117,59 @@ internal fun Metrics.toProto(): Datum = datum {
             }
         }
     }
+
+    for ((k, v) in metricDistributions) {
+        measurements[k] = when (v) {
+            is Long -> {
+                measurement { inumber = v }
+            }
+            else -> {
+                throw IllegalArgumentException("unhandled distribution type: %s".format(v.javaClass.name))
+            }
+        }
+    }
     measurements
+}
+
+fun Any.asDimension(): Dimension = when (this) {
+    is Boolean -> {
+        dimension { boolean = this@asDimension }
+    }
+    is Long -> {
+        dimension { number = this@asDimension }
+    }
+    is String -> {
+        dimension { string = this@asDimension }
+    }
+    else -> {
+        throw IllegalArgumentException("unhandled dimension type: %s".format(this.javaClass.name))
+    }
+}
+
+fun Set<Map.Entry<String, Any>>.initializeDatum(timestampNanos: Long, name: String): Datum = datum {
+    unixNanos = timestampNanos
+    metric = name
+    for ((metric, position) in this@initializeDatum) {
+        dimensions[metric] = position.asDimension()
+    }
+}
+
+fun Aggregation.toProto(): Measurement = measurement {
+    when (this@toProto) {
+        is Aggregation.Histogram -> {
+            histogram = histogram {
+                for ((bucket, count) in this@toProto.bucketCounts) {
+                    buckets[bucket] = count.sum()
+                }
+            }
+        }
+        is Aggregation.StatisticSet -> {
+            statisticSet = statisticSet {
+                minimum = min.get()
+                maximum = max.get()
+                samplesum = sum.sum()
+                samplecount = count.sum()
+            }
+        }
+    }
 }

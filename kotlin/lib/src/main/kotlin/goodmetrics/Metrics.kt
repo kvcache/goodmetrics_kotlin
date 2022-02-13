@@ -8,34 +8,43 @@ class Metrics internal constructor(
     internal var timestampMillis: Long,
     internal val startNanoTime: Long,
 ) {
-    internal val metricMeasurements: MutableMap<String, Any> = mutableMapOf()
+    internal val metricMeasurements: MutableMap<String, Number> = mutableMapOf()
+    internal val metricDistributions: MutableMap<String, Long> = mutableMapOf()
     internal val metricDimensions: MutableMap<String, Any> = mutableMapOf()
 
-    fun dimensionBool(dimension: String, value: Boolean) {
+    fun dimension(dimension: String, value: Boolean) {
         metricDimensions[dimension] = value
     }
 
-    fun dimensionNumber(dimension: String, value: Long) {
+    fun dimension(dimension: String, value: Long) {
         metricDimensions[dimension] = value
     }
 
-    fun dimensionString(dimension: String, value: String) {
+    fun dimension(dimension: String, value: String) {
         metricDimensions[dimension] = value
     }
 
-    fun measureI(name: String, value: Long) {
+    fun measure(name: String, value: Long) {
         metricMeasurements[name] = value
     }
 
-    fun measureI(name: String, value: Int) {
+    fun measure(name: String, value: Int) {
         metricMeasurements[name] = value.toLong()
     }
 
-    fun measureF(name: String, value: Double) {
+    fun measure(name: String, value: Double) {
         metricMeasurements[name] = value
     }
 
-    fun measureF(name: String, value: Float) {
+    fun measure(name: String, value: Float) {
         metricMeasurements[name] = value.toDouble()
+    }
+
+    fun distribution(name: String, value: Long) {
+        metricDistributions[name] = value
+    }
+
+    fun distribution(name: String, value: Int) {
+        metricDistributions[name] = value.toLong()
     }
 }

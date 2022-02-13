@@ -52,6 +52,6 @@ class MetricsFactory(
             metrics.timestampMillis = epochMillis()
         }
         val duration = System.nanoTime() - metrics.startNanoTime
-        metrics.measureI("totaltime", duration)
+        metrics.measure("totaltime", duration)
     }
 }
