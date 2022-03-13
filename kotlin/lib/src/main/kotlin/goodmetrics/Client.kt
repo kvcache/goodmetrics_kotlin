@@ -67,8 +67,8 @@ class Client private constructor(
                     unixNanos = System.currentTimeMillis() * 1000000
                     dimensions["ordinal"] = dimension { number = 16 }
                     dimensions["possible"] = dimension { boolean = true }
-                    measurements["some_ivalue"] = measurement { inumber = 42 }
-                    measurements["some_fvalue"] = measurement { fnumber = 42.125 }
+                    measurements["some_ivalue"] = measurement { i32 = 42 }
+                    measurements["some_fvalue"] = measurement { f64 = 42.125 }
                     measurements["some_stat"] = measurement { statisticSet = statisticSet {
                         minimum = 1.0
                         maximum = 2.0
@@ -106,10 +106,10 @@ internal fun Metrics.toProto(): Datum = datum {
     for ((k, v) in metricMeasurements) {
         measurements[k] = when (v) {
             is Long -> {
-                measurement { inumber = v }
+                measurement { i64 = v }
             }
             is Double -> {
-                measurement { fnumber = v }
+                measurement { f64 = v }
             }
             // TODO: The preaggregated types
             else -> {
@@ -119,14 +119,7 @@ internal fun Metrics.toProto(): Datum = datum {
     }
 
     for ((k, v) in metricDistributions) {
-        measurements[k] = when (v) {
-            is Long -> {
-                measurement { inumber = v }
-            }
-            else -> {
-                throw IllegalArgumentException("unhandled distribution type: %s".format(v.javaClass.name))
-            }
-        }
+        measurements[k] = measurement { i64 = v }
     }
     measurements
 }
