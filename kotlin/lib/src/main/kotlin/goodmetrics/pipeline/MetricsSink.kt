@@ -2,6 +2,6 @@ package goodmetrics.pipeline
 
 import goodmetrics.Metrics
 
-interface MetricsSink {
+fun interface MetricsSink {
     fun emit(metrics: Metrics)
 }
