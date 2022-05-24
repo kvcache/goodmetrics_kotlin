@@ -10,7 +10,6 @@ import java.net.Inet4Address
 import kotlin.random.Random
 
 class IntegrationTest {
-    //@Ignore
     @Test
     fun testMetrics() = runBlocking {
         val metricsBackgroundScope = CoroutineScope(Dispatchers.Default)
