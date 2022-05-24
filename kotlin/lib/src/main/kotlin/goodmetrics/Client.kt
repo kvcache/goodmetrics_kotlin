@@ -101,7 +101,7 @@ internal fun Metrics.toProto(): Datum = datum {
     unixNanos = timestampMillis * 1000000
 
     for ((k, v) in metricDimensions) {
-        dimensions[k] = v.asDimension()
+        dimensions[k] = v.asProtocolBuffersDimension()
     }
 
     for ((k, v) in metricMeasurements) {
@@ -125,18 +125,15 @@ internal fun Metrics.toProto(): Datum = datum {
     measurements
 }
 
-fun Any.asDimension(): Dimension = when (this) {
-    is Boolean -> {
-        dimension { boolean = this@asDimension }
+fun Metrics.Dimension.asProtocolBuffersDimension(): Dimension = when (this) {
+    is Metrics.Dimension.Bool -> {
+        dimension { boolean = value }
     }
-    is Long -> {
-        dimension { number = this@asDimension }
+    is Metrics.Dimension.Num -> {
+        dimension { number = value }
     }
-    is String -> {
-        dimension { string = this@asDimension }
-    }
-    else -> {
-        throw IllegalArgumentException("unhandled dimension type: %s".format(this.javaClass.name))
+    is Metrics.Dimension.Str -> {
+        dimension { string = value }
     }
 }
 
@@ -144,7 +141,7 @@ fun MetricPosition.initializeDatum(timestampNanos: Long, name: String): Datum = 
     unixNanos = timestampNanos
     metric = name
     for (position in this@initializeDatum) {
-        dimensions[position.name] = position.value.asDimension()
+        dimensions[position.name] = position.asProtocolBuffersDimension()
     }
 }
 
