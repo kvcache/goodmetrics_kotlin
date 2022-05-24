@@ -2,6 +2,7 @@ package goodmetrics
 
 import goodmetrics.pipeline.AggregatedBatch
 import goodmetrics.pipeline.Aggregation
+import goodmetrics.pipeline.MetricPosition
 import io.goodmetrics.Datum
 import io.goodmetrics.Dimension
 import io.goodmetrics.Measurement
@@ -139,11 +140,11 @@ fun Any.asDimension(): Dimension = when (this) {
     }
 }
 
-fun Set<Map.Entry<String, Any>>.initializeDatum(timestampNanos: Long, name: String): Datum = datum {
+fun MetricPosition.initializeDatum(timestampNanos: Long, name: String): Datum = datum {
     unixNanos = timestampNanos
     metric = name
-    for ((metric, position) in this@initializeDatum) {
-        dimensions[metric] = position.asDimension()
+    for (position in this@initializeDatum) {
+        dimensions[position.name] = position.value.asDimension()
     }
 }
 

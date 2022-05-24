@@ -1,6 +1,8 @@
 package goodmetrics.pipeline
 
 import goodmetrics.Metrics
+import goodmetrics.asDimension
+import io.goodmetrics.Dimension
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -14,11 +16,12 @@ import kotlin.math.pow
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
+typealias MetricPosition = Set<Metrics.Dimension>
 typealias MetricPositions = Map<
     /**
      * Dimensions - the position
      */
-    Set<Map.Entry<String, Any>>,
+    MetricPosition,
     /**
      * Measurement name -> aggregated measurement
      * Measurements per position
@@ -93,16 +96,16 @@ class Aggregator(
     }
 }
 
-typealias DimensionPosition = Set<Map.Entry<String, Any>>
+typealias DimensionPosition = Set<Metrics.Dimension>
 
 typealias AggregationMap = ConcurrentHashMap<String, Aggregation>
 typealias DimensionPositionMap = ConcurrentHashMap<DimensionPosition, AggregationMap>
 typealias MetricsMap = ConcurrentHashMap<String, DimensionPositionMap>
 
-fun Metrics.dimensionPosition(): Set<Map.Entry<String, Any>> {
+fun Metrics.dimensionPosition(): DimensionPosition {
     return metricDimensions
         .asSequence()
-        .map { entry -> entry }
+        .map { entry -> entry.value }
         .toSet()
 }
 
