@@ -11,24 +11,24 @@ class Metrics internal constructor(
     sealed interface Dimension {
         val name: String
         val value: Any
-        data class StringDimension(override val name: String, override val value: String): Dimension
-        data class NumberDimension(override val name: String, override val value: Long): Dimension
-        data class BooleanDimension(override val name: String, override val value: Boolean): Dimension
+        data class Str(override val name: String, override val value: String): Dimension
+        data class Num(override val name: String, override val value: Long): Dimension
+        data class Bool(override val name: String, override val value: Boolean): Dimension
     }
     internal val metricMeasurements: MutableMap<String, Number> = mutableMapOf()
     internal val metricDistributions: MutableMap<String, Long> = mutableMapOf()
     internal val metricDimensions: MutableMap<String, Dimension> = mutableMapOf()
 
     fun dimension(dimension: String, value: Boolean) {
-        metricDimensions[dimension] = Dimension.BooleanDimension(dimension, value)
+        metricDimensions[dimension] = Dimension.Bool(dimension, value)
     }
 
     fun dimension(dimension: String, value: Long) {
-        metricDimensions[dimension] = Dimension.NumberDimension(dimension, value)
+        metricDimensions[dimension] = Dimension.Num(dimension, value)
     }
 
     fun dimension(dimension: String, value: String) {
-        metricDimensions[dimension] = Dimension.StringDimension(dimension, value)
+        metricDimensions[dimension] = Dimension.Str(dimension, value)
     }
 
     fun measure(name: String, value: Long) {
