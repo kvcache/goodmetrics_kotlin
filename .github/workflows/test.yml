@@ -13,12 +13,12 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: gradle/gradle-build-action@v2
-          with:
-            gradle-version: wrapper
+        with:
+          gradle-version: wrapper
       - name: Setup and execute Gradle 'test' task
-          uses: gradle/gradle-build-action@v2
-          with:
-            arguments: test
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: test
 
       - uses: actions/upload-artifact@v3
         with:
