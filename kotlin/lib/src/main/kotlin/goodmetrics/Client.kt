@@ -144,7 +144,7 @@ fun MetricPosition.initializeDatum(timestampNanos: Long, name: String): Datum = 
     unixNanos = timestampNanos
     metric = name
     for (position in this@initializeDatum) {
-        dimensions[metric] = position
+        dimensions[metric] = position.value.asDimension()
     }
 }
 

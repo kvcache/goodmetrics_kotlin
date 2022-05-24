@@ -1,22 +1,5 @@
 package goodmetrics
 
-sealed interface SupportedDimensionType
-data class StringDimension(val value: String) : SupportedDimensionType {
-    override fun toString(): String {
-        return value
-    }
-}
-data class NumberDimension(val value: Long) : SupportedDimensionType {
-    override fun toString(): String {
-        return value.toString()
-    }
-}
-data class BooleanDimension(val value: Boolean) : SupportedDimensionType {
-    override fun toString(): String {
-        return value.toString()
-    }
-}
-
 /**
  * Not thread safe.
  */
@@ -25,20 +8,27 @@ class Metrics internal constructor(
     internal var timestampMillis: Long,
     internal val startNanoTime: Long,
 ) {
+    sealed interface Dimension {
+        val name: String
+        val value: Any
+        data class StringDimension(override val name: String, override val value: String): Dimension
+        data class NumberDimension(override val name: String, override val value: Long): Dimension
+        data class BooleanDimension(override val name: String, override val value: Boolean): Dimension
+    }
     internal val metricMeasurements: MutableMap<String, Number> = mutableMapOf()
     internal val metricDistributions: MutableMap<String, Long> = mutableMapOf()
-    internal val metricDimensions: MutableMap<String, SupportedDimensionType> = mutableMapOf()
+    internal val metricDimensions: MutableMap<String, Dimension> = mutableMapOf()
 
     fun dimension(dimension: String, value: Boolean) {
-        metricDimensions[dimension] = BooleanDimension(value)
+        metricDimensions[dimension] = Dimension.BooleanDimension(dimension, value)
     }
 
     fun dimension(dimension: String, value: Long) {
-        metricDimensions[dimension] = NumberDimension(value)
+        metricDimensions[dimension] = Dimension.NumberDimension(dimension, value)
     }
 
     fun dimension(dimension: String, value: String) {
-        metricDimensions[dimension] = StringDimension(value)
+        metricDimensions[dimension] = Dimension.StringDimension(dimension, value)
     }
 
     fun measure(name: String, value: Long) {

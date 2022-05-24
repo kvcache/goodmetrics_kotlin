@@ -16,7 +16,7 @@ import kotlin.math.pow
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
-typealias MetricPosition = Set<Dimension>
+typealias MetricPosition = Set<Metrics.Dimension>
 typealias MetricPositions = Map<
     /**
      * Dimensions - the position
@@ -96,16 +96,16 @@ class Aggregator(
     }
 }
 
-typealias DimensionPosition = Set<Dimension>
+typealias DimensionPosition = Set<Metrics.Dimension>
 
 typealias AggregationMap = ConcurrentHashMap<String, Aggregation>
 typealias DimensionPositionMap = ConcurrentHashMap<DimensionPosition, AggregationMap>
 typealias MetricsMap = ConcurrentHashMap<String, DimensionPositionMap>
 
-fun Metrics.dimensionPosition(): MetricPosition {
+fun Metrics.dimensionPosition(): DimensionPosition {
     return metricDimensions
         .asSequence()
-        .map { entry -> entry.value.asDimension() }
+        .map { entry -> entry.value }
         .toSet()
 }
 
