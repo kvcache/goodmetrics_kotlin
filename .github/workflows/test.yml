@@ -1,0 +1,26 @@
+name: Test
+on:
+  pull_request:
+    branches:
+      - main
+jobs:
+  check:
+    name: run the tests
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: gradle/gradle-build-action@v2
+          with:
+            gradle-version: wrapper
+      - name: Setup and execute Gradle 'test' task
+          uses: gradle/gradle-build-action@v2
+          with:
+            arguments: test
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: Package
+          path: kotlin/lib/build/libs
