@@ -60,13 +60,13 @@ class Aggregator(
     override fun emit(metrics: Metrics) {
         val position = metrics.dimensionPosition()
 
-        val metricPositions = currentBatch.getOrElse(metrics.name, ::DimensionPositionMap)
+        val metricPositions = currentBatch.getOrPut(metrics.name, ::DimensionPositionMap)
 
         // Simple measurements are statistic_sets
         for ((name, value) in metrics.metricMeasurements) {
             val aggregation = metricPositions
-                .getOrElse(position, ::AggregationMap)
-                .getOrElse(name, Aggregation::StatisticSet)
+                .getOrPut(position, ::AggregationMap)
+                .getOrPut(name, Aggregation::StatisticSet)
             when(aggregation) {
                 is Aggregation.StatisticSet -> {
                     aggregation.accumulate(value)
@@ -80,8 +80,8 @@ class Aggregator(
         // Distributions are histograms
         for ((name, value) in metrics.metricDistributions) {
             val aggregation = metricPositions
-                .getOrElse(position, ::AggregationMap)
-                .getOrElse(name, Aggregation::Histogram)
+                .getOrPut(position, ::AggregationMap)
+                .getOrPut(name, Aggregation::Histogram)
             when(aggregation) {
                 is Aggregation.StatisticSet -> {
                     // TODO: Logging
@@ -119,7 +119,7 @@ sealed interface Aggregation {
         val bucketCounts: ConcurrentHashMap<Long, LongAdder> = ConcurrentHashMap(),
     ) : Aggregation {
         fun accumulate(value: Long) {
-            bucketCounts.getOrElse(bucket(value), ::LongAdder).add(value)
+            bucketCounts.getOrPut(bucket(value), ::LongAdder).add(value)
         }
     }
 
