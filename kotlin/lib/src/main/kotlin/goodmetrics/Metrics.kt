@@ -3,7 +3,7 @@ package goodmetrics
 /**
  * Not thread safe.
  */
-class Metrics internal constructor(
+data class Metrics internal constructor(
     internal val name: String,
     internal var timestampMillis: Long,
     internal val startNanoTime: Long,
