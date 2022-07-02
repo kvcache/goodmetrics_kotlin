@@ -3,7 +3,7 @@ import com.google.protobuf.gradle.*
 plugins {
     id("org.jetbrains.kotlin.jvm")
 
-    id("com.google.protobuf") version "0.8.18"
+    id("com.google.protobuf") version "0.8.19"
 
     // Apply the java-library plugin for API and implementation separation.
     `java-library`
@@ -17,10 +17,10 @@ repositories {
     mavenCentral()
 }
 
-val protoVersion = "3.19.3"
-val grpcVersion = "1.43.2"
-val grpcKtVersion = "1.2.1"
-val coroutinesVersion = "1.6.0"
+val protoVersion = "3.21.2"
+val grpcVersion = "1.47.0"
+val grpcKtVersion = "1.3.0"
+val coroutinesVersion = "1.6.2"
 
 dependencies {
     // Align versions of all Kotlin components
@@ -49,7 +49,7 @@ dependencies {
 
 kotlin {
     jvmToolchain {
-        (this as JavaToolchainSpec).languageVersion.set(JavaLanguageVersion.of("17"))
+        languageVersion.set(JavaLanguageVersion.of("18"))
     }
 }
 
@@ -70,7 +70,7 @@ protobuf {
             artifact = "io.grpc:protoc-gen-grpc-java:$grpcVersion"
         }
         id("grpckt") {
-            artifact = "io.grpc:protoc-gen-grpc-kotlin:$grpcKtVersion:jdk7@jar"
+            artifact = "io.grpc:protoc-gen-grpc-kotlin:$grpcKtVersion:jdk8@jar"
         }
     }
     generateProtoTasks {
