@@ -1,5 +1,6 @@
 package goodmetrics
 
+import goodmetrics.downstream.GoodmetricsClient
 import goodmetrics.pipeline.Aggregator
 import goodmetrics.pipeline.BatchSender.Companion.launchSender
 import goodmetrics.pipeline.Batcher
@@ -21,8 +22,8 @@ class MetricsSetups private constructor() {
             val factory = MetricsFactory(incomingBuffer)
 
             val batched = Batcher(incomingBuffer)
-            val emitterJob = launchSender(batched, Client.connect(goodmetricsHost, port)) { batch ->
-                sendMetrics(batch)
+            val emitterJob = launchSender(batched, GoodmetricsClient.connect(goodmetricsHost, port)) { batch ->
+                sendMetricsBatch(batch)
             }
 
             return ConfiguredMetrics(
@@ -36,7 +37,7 @@ class MetricsSetups private constructor() {
             val factory = MetricsFactory(incomingBuffer)
 
             val batched = Batcher(incomingBuffer)
-            val emitterJob = launchSender(batched, Client.connect(goodmetricsHost, port)) { batch ->
+            val emitterJob = launchSender(batched, GoodmetricsClient.connect(goodmetricsHost, port)) { batch ->
                 sendPreaggregatedMetrics(batch)
             }
 

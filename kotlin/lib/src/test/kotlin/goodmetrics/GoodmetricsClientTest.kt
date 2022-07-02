@@ -1,15 +1,16 @@
 package goodmetrics
 
+import goodmetrics.downstream.GoodmetricsClient
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Ignore
 import kotlin.test.Test
 
-class ClientTest {
+class GoodmetricsClientTest {
     @Ignore
     @Test fun someLibraryMethodReturnsTrue() {
         runBlocking {
-            val client = Client.connect("localhost")
-            client.sendToyMetrics()
+            val goodmetricsClient = GoodmetricsClient.connect("localhost")
+            goodmetricsClient.sendToyMetrics()
         }
     }
 }

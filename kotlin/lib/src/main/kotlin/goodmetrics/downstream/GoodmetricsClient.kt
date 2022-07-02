@@ -1,5 +1,6 @@
-package goodmetrics
+package goodmetrics.downstream
 
+import goodmetrics.Metrics
 import goodmetrics.pipeline.AggregatedBatch
 import goodmetrics.pipeline.Aggregation
 import goodmetrics.pipeline.MetricPosition
@@ -17,12 +18,12 @@ import io.grpc.netty.GrpcSslContexts
 import io.grpc.netty.NettyChannelBuilder
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory
 
-class Client private constructor(
+class GoodmetricsClient private constructor(
     private val stub: MetricsGrpcKt.MetricsCoroutineStub,
     private val prescientDimensions: Map<String, Dimension> = mapOf(),
 ) {
     companion object {
-        fun connect(goodmetricsHostname: String = "localhost", port: Int = 9573): Client {
+        fun connect(goodmetricsHostname: String = "localhost", port: Int = 9573): GoodmetricsClient {
             val channel = NettyChannelBuilder.forAddress(goodmetricsHostname, port)
                 .sslContext(
                     GrpcSslContexts.forClient()
@@ -30,11 +31,11 @@ class Client private constructor(
                         .build()
                 )
                 .build()
-            return Client(MetricsGrpcKt.MetricsCoroutineStub(channel))
+            return GoodmetricsClient(MetricsGrpcKt.MetricsCoroutineStub(channel))
         }
     }
 
-    suspend fun sendMetrics(batch: List<Metrics>) {
+    suspend fun sendMetricsBatch(batch: List<Metrics>) {
         val request = metricsRequest {
             sharedDimensions.putAll(prescientDimensions)
             batch.forEach {

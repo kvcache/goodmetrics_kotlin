@@ -44,7 +44,7 @@ dependencies {
     testImplementation("org.jetbrains.kotlin:kotlin-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit")
 
-    protobuf(files("src/proto/metrics"))
+    protobuf(files("src/proto/metrics", "src/proto/opentelemetry"))
 }
 
 kotlin {
