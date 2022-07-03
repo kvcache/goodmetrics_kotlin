@@ -33,8 +33,8 @@ internal class AggregatorTest {
         batches.clear()
     }
 
-    suspend fun oneSecondDelay(delay: Duration) {
-        assertEquals(1.seconds, delay)
+    private suspend fun oneSecondDelay(delay: Duration) {
+        assertTrue(delay <= 1.seconds, "delay: $delay")
         sleepAggregator()
     }
 

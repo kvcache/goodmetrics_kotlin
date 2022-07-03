@@ -77,7 +77,7 @@ class GoodmetricsClient private constructor(
                         samplesum = 4.0
                         samplecount = 3
                     } }
-                    measurements["some_histgram"] = measurement { histogram = histogram {
+                    measurements["some_histogram"] = measurement { histogram = histogram {
                         buckets[0] = 1
                         buckets[1] = 3
                         buckets[2] = 5
@@ -99,7 +99,7 @@ class GoodmetricsClient private constructor(
 
 internal fun Metrics.toProto(): Datum = datum {
     metric = name
-    unixNanos = timestampMillis * 1000000
+    unixNanos = timestampNanos
 
     for ((k, v) in metricDimensions) {
         dimensions[k] = v.asProtocolBuffersDimension()

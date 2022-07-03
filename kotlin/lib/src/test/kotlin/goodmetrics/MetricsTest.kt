@@ -7,29 +7,29 @@ import kotlin.test.assertEquals
 internal class MetricsTest {
     private lateinit var metricsFactory: MetricsFactory
     private val emittedMetrics: MutableList<Metrics> = mutableListOf()
-    private var nowMillis = 0L
+    private var nowNanos = 0L
 
     @BeforeTest
     fun before() {
-        nowMillis = 0
+        nowNanos = 0
         emittedMetrics.clear()
-        metricsFactory = MetricsFactory(sink = emittedMetrics::add, epochMillis = { nowMillis })
+        metricsFactory = MetricsFactory(sink = emittedMetrics::add, timeSource = { nowNanos })
     }
 
     @Test
     fun testTimestampStart() {
-        nowMillis = 13
+        nowNanos = 13
         val metrics = metricsFactory.getMetrics("test", TimestampAt.Start)
         metrics.assert(timestamp = 13)
     }
 
     @Test
     fun testTimestampEnd() {
-        nowMillis = 13
+        nowNanos = 13
         val metrics = metricsFactory.getMetrics("test", TimestampAt.End)
         metrics.assert(timestamp = -1)
 
-        nowMillis = 17
+        nowNanos = 17
         metricsFactory.emit(metrics)
         metrics.assert(timestamp = 17)
     }
@@ -124,7 +124,7 @@ internal class MetricsTest {
 fun Metrics.assert(timestamp: Long? = null, dimensions: Map<String, Metrics.Dimension>? = null, measurements: List<Pair<String, Number>>? = null, distributions: Map<String, Long>? = null) {
     val view = getView()
     if (timestamp != null) {
-        assertEquals(timestamp, view.timestampMillis)
+        assertEquals(timestamp, view.timestampNanos)
     }
     if (dimensions != null) {
         assertEquals(dimensions, view.dimensions)

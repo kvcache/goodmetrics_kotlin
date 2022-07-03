@@ -19,7 +19,7 @@ class MetricsSetups private constructor() {
     companion object {
         fun CoroutineScope.rowPerMetric(goodmetricsHost: String = "localhost", port: Int = 9573): ConfiguredMetrics {
             val incomingBuffer = SynchronizingBuffer()
-            val factory = MetricsFactory(incomingBuffer)
+            val factory = MetricsFactory(incomingBuffer, timeSource = NanoTimeSource.preciseNanoTime)
 
             val batched = Batcher(incomingBuffer)
             val emitterJob = launchSender(batched, GoodmetricsClient.connect(goodmetricsHost, port)) { batch ->
@@ -34,7 +34,7 @@ class MetricsSetups private constructor() {
 
         fun CoroutineScope.preaggregated(goodmetricsHost: String = "localhost", port: Int = 9573, aggregationWidth: Duration = 10.seconds): ConfiguredMetrics {
             val incomingBuffer = Aggregator(aggregationWidth)
-            val factory = MetricsFactory(incomingBuffer)
+            val factory = MetricsFactory(incomingBuffer, timeSource = NanoTimeSource.fastNanoTime)
 
             val batched = Batcher(incomingBuffer)
             val emitterJob = launchSender(batched, GoodmetricsClient.connect(goodmetricsHost, port)) { batch ->

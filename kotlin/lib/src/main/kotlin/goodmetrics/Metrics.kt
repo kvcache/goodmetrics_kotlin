@@ -5,7 +5,7 @@ package goodmetrics
  */
 data class Metrics internal constructor(
     internal val name: String,
-    internal var timestampMillis: Long,
+    internal var timestampNanos: Long,
     internal val startNanoTime: Long,
 ) {
     sealed interface Dimension {
@@ -21,7 +21,7 @@ data class Metrics internal constructor(
 
     data class View(
         val metricName: String,
-        val timestampMillis: Long,
+        val timestampNanos: Long,
         val startNanoTime: Long,
         val dimensions: Map<String, Dimension>,
         val measurements: Map<String, Number>,
@@ -31,7 +31,7 @@ data class Metrics internal constructor(
     fun getView(): View {
         return View(
             name,
-            timestampMillis,
+            timestampNanos,
             startNanoTime,
             metricDimensions.toMap(),
             metricMeasurements.toMap(),

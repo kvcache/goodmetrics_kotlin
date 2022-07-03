@@ -4,6 +4,7 @@ import goodmetrics.Metrics
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.yield
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.DoubleAccumulator
 import java.util.concurrent.atomic.DoubleAdder
@@ -12,7 +13,9 @@ import kotlin.math.log
 import kotlin.math.max
 import kotlin.math.pow
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.TimeMark
 
 typealias MetricPosition = Set<Metrics.Dimension>
 typealias MetricPositions = Map<
@@ -33,25 +36,48 @@ data class AggregatedBatch(
     val positions: MetricPositions,
 )
 
+private fun epochTime(epochMillis: Long) : TimeMark {
+    return object : TimeMark {
+        override fun elapsedNow(): Duration {
+            return (System.currentTimeMillis() - epochMillis).milliseconds
+        }
+    }
+}
+
+private fun timeColumnMillis(divisor: Duration): Long {
+    val now = System.currentTimeMillis()
+    return now - (now % divisor.inWholeMilliseconds)
+}
+
 class Aggregator(
     private val aggregationWidth: Duration = 10.seconds,
     private val delay_fn: suspend (duration: Duration) -> Unit = ::delay
 ) : MetricsPipeline<AggregatedBatch>, MetricsSink {
     @Volatile
     private var currentBatch = MetricsMap()
+    private var lastEmit: Long = timeColumnMillis(aggregationWidth)
 
     override fun consume(): Flow<AggregatedBatch> {
         return flow {
             while (true) {
-                delay_fn(aggregationWidth)
-                val now = System.currentTimeMillis() * 1000000
+                val nextEmit = epochTime(lastEmit) + aggregationWidth
+                val timeToNextEmit = nextEmit.elapsedNow()
+                lastEmit += aggregationWidth.inWholeMilliseconds
+                if (0.seconds < timeToNextEmit || aggregationWidth < -timeToNextEmit) {
+                    // Skip a time column because of sadness.
+                    // Resume on the column cadence as best we can.
+                    yield()
+                    continue
+                }
+                delay_fn(-timeToNextEmit)
+
                 val batch = currentBatch
                 currentBatch = MetricsMap()
 
                 for ((metric, positions) in batch) {
                     emit(
                         AggregatedBatch(
-                            timestampNanos = now,
+                            timestampNanos = lastEmit * 1000000,
                             metric = metric,
                             positions = positions,
                         )
