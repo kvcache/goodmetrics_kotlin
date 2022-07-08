@@ -33,7 +33,25 @@ fun interface NanoTimeSource {
 class MetricsFactory(
     private val sink: MetricsSink,
     @PublishedApi internal val timeSource: NanoTimeSource,
+    private val totaltimeType: TotaltimeType
 ) {
+    enum class TotaltimeType {
+        /**
+         * totaltime is a histogram (preferred)
+         */
+        DistributionMicroseconds,
+
+        /**
+         * totaltime is a statisticset when preaggregated
+         */
+        MeasurementMicroseconds,
+
+        /**
+         * No totaltime metric
+         */
+        None,
+    }
+
     /**
      * Passes a Metrics into your scope. Record your unit of work; when the scope exits
      * the Metrics will be stamped with `totaltime` and emitted through the pipeline.
@@ -68,6 +86,10 @@ class MetricsFactory(
             metrics.timestampNanos = timeSource.epochNanos()
         }
         val duration = System.nanoTime() - metrics.startNanoTime
-        metrics.measure("totaltime", duration)
+        when (totaltimeType) {
+            TotaltimeType.DistributionMicroseconds -> metrics.distribution("totaltime", duration / 1000)
+            TotaltimeType.MeasurementMicroseconds -> metrics.measure("totaltime", duration / 1000)
+            TotaltimeType.None -> {}
+        }
     }
 }

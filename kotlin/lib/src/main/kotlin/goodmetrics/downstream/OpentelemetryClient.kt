@@ -81,11 +81,10 @@ class OpentelemetryClient(
     }
 
     suspend fun sendPreaggregatedBatch(batch: List<AggregatedBatch>) {
+        val resourceMetricsBatch = asResourceMetricsFromBatch(batch)
         stub.export(
             exportMetricsServiceRequest {
-                resourceMetrics.add(
-                    asResourceMetricsFromBatch(batch)
-                )
+                resourceMetrics.add(resourceMetricsBatch)
             }
         )
     }
@@ -120,20 +119,18 @@ class OpentelemetryClient(
         for ((position, measurements) in this@asGoofyOtlpMetricSequence.positions) {
             val otlpDimensions = position.map { it.asOtlpKeyValue() }
             for ((measurementName, aggregation) in measurements) {
-                yield(
-                    metric {
-                        name = "${this@asGoofyOtlpMetricSequence.metric}_$measurementName"
-                        unit = "1"
-                        when (aggregation) {
-                            is Aggregation.Histogram -> {
-                                histogram = histogram {
-                                    aggregation.asOtlpHistogram(otlpDimensions, this@asGoofyOtlpMetricSequence.timestampNanos)
-                                }
+                when (aggregation) {
+                    is Aggregation.Histogram -> {
+                        yield(
+                            metric {
+                                name = "${this@asGoofyOtlpMetricSequence.metric}_$measurementName"
+                                unit = "1"
+                                histogram = aggregation.asOtlpHistogram(otlpDimensions, this@asGoofyOtlpMetricSequence.timestampNanos)
                             }
-                            is Aggregation.StatisticSet -> TODO()
-                        }
+                        )
                     }
-                )
+                    is Aggregation.StatisticSet -> TODO()
+                }
             }
         }
     }
@@ -203,8 +200,9 @@ class OpentelemetryClient(
             timeUnixNano = timestampNanos
             count = this@asOtlpHistogram.bucketCounts.values.sumOf { it.sum() }
             sum = this@asOtlpHistogram.bucketCounts.entries.sumOf { (bucket, count) -> bucket * count.sum() }.toDouble()
-            explicitBounds.addAll(this@asOtlpHistogram.bucketCounts.keys.asSequence().map { it.toDouble() }.asIterable())
-            bucketCounts.addAll(this@asOtlpHistogram.bucketCounts.values.map { it.sum() })
+            val sorted = this@asOtlpHistogram.bucketCounts.toSortedMap()
+            explicitBounds.addAll(sorted.keys.asSequence().map { it.toDouble() }.asIterable())
+            bucketCounts.addAll(sorted.values.map { it.sum() })
         })
     }
 

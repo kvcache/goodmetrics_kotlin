@@ -13,7 +13,7 @@ internal class MetricsTest {
     fun before() {
         nowNanos = 0
         emittedMetrics.clear()
-        metricsFactory = MetricsFactory(sink = emittedMetrics::add, timeSource = { nowNanos })
+        metricsFactory = MetricsFactory(sink = emittedMetrics::add, timeSource = { nowNanos }, totaltimeType = MetricsFactory.TotaltimeType.DistributionMicroseconds)
     }
 
     @Test
