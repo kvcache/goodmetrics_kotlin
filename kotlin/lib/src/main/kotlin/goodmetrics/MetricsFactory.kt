@@ -21,7 +21,7 @@ fun interface NanoTimeSource {
     companion object {
         val preciseNanoTime = NanoTimeSource {
             val now = Instant.now()
-            now.epochSecond + now.nano
+            now.epochSecond * 1000000000 + now.nano
         }
 
         val fastNanoTime = NanoTimeSource {

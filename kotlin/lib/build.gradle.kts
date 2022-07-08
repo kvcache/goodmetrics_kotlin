@@ -20,7 +20,7 @@ repositories {
 val protoVersion = "3.21.2"
 val grpcVersion = "1.47.0"
 val grpcKtVersion = "1.3.0"
-val coroutinesVersion = "1.6.2"
+val coroutinesVersion = "1.6.3"
 
 dependencies {
     // Align versions of all Kotlin components
@@ -113,9 +113,9 @@ publishing {
                 }
                 developers {
                     developer {
-                        id.set("warriorofwire")
+                        id.set("kvc0")
                         name.set("Kenny")
-                        email.set("3454741+WarriorOfWire@users.noreply.github.com")
+                        email.set("3454741+kvc0@users.noreply.github.com")
                     }
                 }
                 scm {

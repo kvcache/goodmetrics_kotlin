@@ -14,7 +14,7 @@ fun main() {
     val lightstepIngestHost = "ingest.lightstep.com"
     val lightstepIngestPort = 443
     val lightstepAuthHeader = "lightstep-access-token"
-    val lightstepToken = "<redacted>"
+    val lightstepToken = "redacted"
 
     val authHeader = io.grpc.Metadata()
     authHeader.put(io.grpc.Metadata.Key.of(lightstepAuthHeader, io.grpc.Metadata.ASCII_STRING_MARSHALLER), lightstepToken)
@@ -39,7 +39,7 @@ fun main() {
         sink = sink,
         timeSource = NanoTimeSource.preciseNanoTime,
     )
-    val sendingHowMany = 100
+    val sendingHowMany = 10000
     val sentAll = Semaphore(sendingHowMany, sendingHowMany)
 
     runBlocking {
@@ -58,7 +58,7 @@ fun main() {
                     }
                 }
         }
-        repeat(100) { i ->
+        repeat(sendingHowMany) { i ->
             try {
                 factory.record("example") { metrics ->
                     metrics.dimension("round", i.toLong() % 8)
@@ -69,6 +69,7 @@ fun main() {
                 println("it broke while recording")
                 e.printStackTrace()
             }
+            delay(200)
         }
         repeat(sendingHowMany) { sentAll.acquire() }
         a.cancelAndJoin()

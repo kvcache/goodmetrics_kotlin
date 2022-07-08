@@ -121,7 +121,7 @@ class OpentelemetryClient(
 
     private fun AggregatedBatch.asGoofyOtlpMetricSequence(): Sequence<Metric> = sequence {
         for ((position, measurements) in this@asGoofyOtlpMetricSequence.positions) {
-            val otlpDimensions = position.map { it.asOtlpStringKeyValue() }
+            val otlpDimensions = position.map { it.asOtlpKeyValue() }
             for ((measurementName, aggregation) in measurements) {
                 yield(
                     metric {
@@ -129,7 +129,7 @@ class OpentelemetryClient(
                         unit = "1"
                         when (aggregation) {
                             is Aggregation.Histogram -> {
-                                doubleHistogram = doubleHistogram {
+                                histogram = histogram {
                                     aggregation.asOtlpHistogram(otlpDimensions, this@asGoofyOtlpMetricSequence.timestampNanos)
                                 }
                             }
@@ -142,7 +142,7 @@ class OpentelemetryClient(
     }
 
     private fun Metrics.asGoofyOtlpMetricSequence(): Sequence<Metric> {
-        val otlpDimensions = metricDimensions.values.map { it.asOtlpStringKeyValue() }
+        val otlpDimensions = metricDimensions.values.map { it.asOtlpKeyValue() }
         return sequence {
             for ((measurementName, value) in this@asGoofyOtlpMetricSequence.metricMeasurements) {
                 yield(
@@ -150,23 +150,16 @@ class OpentelemetryClient(
                         // name: format!("{metric_name}_{measurement_name}", metric_name = datum.metric, measurement_name=name),
                         name = "${this@asGoofyOtlpMetricSequence.name}_$measurementName"
                         unit = "1"
-
-                        if (value is Long) {
-                            intGauge = intGauge {
-                                this.dataPoints.add(intDataPoint {
-                                    this.timeUnixNano = timestampNanos
-                                    labels.addAll(otlpDimensions.asIterable())
-                                    this.value = value
-                                })
-                            }
-                        } else {
-                            doubleGauge = doubleGauge {
-                                this.dataPoints.add(doubleDataPoint {
-                                    this.timeUnixNano = timestampNanos
-                                    labels.addAll(otlpDimensions.asIterable())
-                                    this.value = value.toDouble()
-                                })
-                            }
+                        gauge = gauge {
+                            this.dataPoints.add(numberDataPoint {
+                                this.timeUnixNano = timestampNanos
+                                attributes.addAll(otlpDimensions.asIterable())
+                                if (value is Long) {
+                                    asInt = value
+                                } else {
+                                    asDouble = value.toDouble()
+                                }
+                            })
                         }
                     }
                 )
@@ -177,7 +170,7 @@ class OpentelemetryClient(
                         // name: format!("{metric_name}_{measurement_name}", metric_name = datum.metric, measurement_name=name),
                         name = "${this@asGoofyOtlpMetricSequence.name}_$measurementName"
                         unit = "1"
-                        doubleHistogram = asOtlpHistogram(otlpDimensions, value)
+                        histogram = asOtlpHistogram(otlpDimensions, value)
                     }
                 )
             }
@@ -185,13 +178,13 @@ class OpentelemetryClient(
     }
 
     private fun Metrics.asOtlpHistogram(
-        otlpDimensions: Iterable<StringKeyValue>,
+        otlpDimensions: Iterable<KeyValue>,
         value: Long
-    ) = doubleHistogram {
+    ) = histogram {
         // Because cumulative is bullshit for service metrics. Change my mind.
         aggregationTemporality = AggregationTemporality.AGGREGATION_TEMPORALITY_DELTA
-        dataPoints.add(doubleHistogramDataPoint {
-            labels.addAll(otlpDimensions)
+        dataPoints.add(histogramDataPoint {
+            attributes.addAll(otlpDimensions)
             startTimeUnixNano = 0
             timeUnixNano = timestampNanos
             count = 1
@@ -202,13 +195,13 @@ class OpentelemetryClient(
     }
 
     private fun Aggregation.Histogram.asOtlpHistogram(
-        otlpDimensions: Iterable<StringKeyValue>,
+        otlpDimensions: Iterable<KeyValue>,
         timestampNanos: Long,
-    ) = doubleHistogram {
+    ) = histogram {
         // Because cumulative is bullshit for service metrics. Change my mind.
         aggregationTemporality = AggregationTemporality.AGGREGATION_TEMPORALITY_DELTA
-        dataPoints.add(doubleHistogramDataPoint {
-            labels.addAll(otlpDimensions)
+        dataPoints.add(histogramDataPoint {
+            attributes.addAll(otlpDimensions)
             startTimeUnixNano = 0
             timeUnixNano = timestampNanos
             count = this@asOtlpHistogram.bucketCounts.values.sumOf { it.sum() }
@@ -253,21 +246,6 @@ class OpentelemetryClient(
             }
             is Metrics.Dimension.Str -> {
                 value = anyValue { stringValue = v.value }
-            }
-        }
-    }
-
-    private fun Metrics.Dimension.asOtlpStringKeyValue(): StringKeyValue = stringKeyValue {
-        key = this@asOtlpStringKeyValue.name
-        when(val v = this@asOtlpStringKeyValue.value) {
-            is Metrics.Dimension.Bool -> {
-                value = v.value.toString()
-            }
-            is Metrics.Dimension.Num -> {
-                value = v.value.toString()
-            }
-            is Metrics.Dimension.Str -> {
-                value = v.value
             }
         }
     }
