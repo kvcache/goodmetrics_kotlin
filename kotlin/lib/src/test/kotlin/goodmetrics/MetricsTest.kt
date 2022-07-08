@@ -66,12 +66,12 @@ internal class MetricsTest {
         metrics.dimension("6", "b")
         metrics.assert(
             dimensions = mapOf(
-                "1" to Metrics.Dimension.Bool("1", true),
-                "2" to Metrics.Dimension.Bool("2", false),
-                "3" to Metrics.Dimension.Num("3", 12),
-                "4" to Metrics.Dimension.Num("4", 17),
-                "5" to Metrics.Dimension.Str("5", "a"),
-                "6" to Metrics.Dimension.Str("6", "b"),
+                "1" to Metrics.Dimension.Boolean("1", true),
+                "2" to Metrics.Dimension.Boolean("2", false),
+                "3" to Metrics.Dimension.Number("3", 12),
+                "4" to Metrics.Dimension.Number("4", 17),
+                "5" to Metrics.Dimension.String("5", "a"),
+                "6" to Metrics.Dimension.String("6", "b"),
             )
         )
     }

@@ -63,8 +63,8 @@ internal class AggregatorTest {
             assertEquals(1, batches.size)
             val batch = batches[0]
             assertEquals("test", batch.metric)
-            assertEquals(setOf(setOf<Metrics.Dimension>(Metrics.Dimension.Str("tes", "t"))), batch.positions.keys)
-            val aggregations = batch.positions[setOf<Metrics.Dimension>(Metrics.Dimension.Str("tes", "t"))]!!
+            assertEquals(setOf(setOf<Metrics.Dimension>(Metrics.Dimension.String("tes", "t"))), batch.positions.keys)
+            val aggregations = batch.positions[setOf<Metrics.Dimension>(Metrics.Dimension.String("tes", "t"))]!!
 
             assertEquals(setOf("f"), aggregations.keys)
             val aggregation = aggregations["f"]!!

@@ -234,14 +234,14 @@ class OpentelemetryClient(
 
     private fun Metrics.Dimension.asOtlpKeyValue(): KeyValue = keyValue {
         key = this@asOtlpKeyValue.name
-        when(val v = this@asOtlpKeyValue.value) {
-            is Metrics.Dimension.Bool -> {
+        when(val v = this@asOtlpKeyValue) {
+            is Metrics.Dimension.Boolean -> {
                 value = anyValue { boolValue = v.value }
             }
-            is Metrics.Dimension.Num -> {
+            is Metrics.Dimension.Number -> {
                 value = anyValue { intValue = v.value }
             }
-            is Metrics.Dimension.Str -> {
+            is Metrics.Dimension.String -> {
                 value = anyValue { stringValue = v.value }
             }
         }

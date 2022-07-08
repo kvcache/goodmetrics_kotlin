@@ -9,11 +9,10 @@ data class Metrics internal constructor(
     internal val startNanoTime: Long,
 ) {
     sealed interface Dimension {
-        val name: String
-        val value: Any
-        data class Str(override val name: String, override val value: String) : Dimension
-        data class Num(override val name: String, override val value: Long) : Dimension
-        data class Bool(override val name: String, override val value: Boolean) : Dimension
+        val name: kotlin.String
+        data class String(override val name: kotlin.String, val value: kotlin.String) : Dimension
+        data class Number(override val name: kotlin.String, val value: Long) : Dimension
+        data class Boolean(override val name: kotlin.String, val value: kotlin.Boolean) : Dimension
     }
     internal val metricMeasurements: MutableMap<String, Number> = mutableMapOf()
     internal val metricDistributions: MutableMap<String, Long> = mutableMapOf()
@@ -40,15 +39,15 @@ data class Metrics internal constructor(
     }
 
     fun dimension(dimension: String, value: Boolean) {
-        metricDimensions[dimension] = Dimension.Bool(dimension, value)
+        metricDimensions[dimension] = Dimension.Boolean(dimension, value)
     }
 
     fun dimension(dimension: String, value: Long) {
-        metricDimensions[dimension] = Dimension.Num(dimension, value)
+        metricDimensions[dimension] = Dimension.Number(dimension, value)
     }
 
     fun dimension(dimension: String, value: String) {
-        metricDimensions[dimension] = Dimension.Str(dimension, value)
+        metricDimensions[dimension] = Dimension.String(dimension, value)
     }
 
     fun measure(name: String, value: Long) {

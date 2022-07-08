@@ -24,9 +24,9 @@ fun main() {
         port = lightstepIngestPort,
         prescientDimensions = PrescientDimensions.AsResource(
             mapOf(
-                "service.name" to Metrics.Dimension.Str("service.name", "goodmetrics_test"),
-                "service.version" to Metrics.Dimension.Str("service.version", OpentelemetryClient::class.java.`package`.implementationVersion ?: "dev"),
-                "host.hostname" to Metrics.Dimension.Str("host.hostname", InetAddress.getLocalHost().hostName)
+                "service.name" to Metrics.Dimension.String("service.name", "goodmetrics_test"),
+                "service.version" to Metrics.Dimension.String("service.version", OpentelemetryClient::class.java.`package`.implementationVersion ?: "dev"),
+                "host.hostname" to Metrics.Dimension.String("host.hostname", InetAddress.getLocalHost().hostName)
             )
         ),
         securityMode = SecurityMode.Insecure,

@@ -127,13 +127,13 @@ internal fun Metrics.toProto(): Datum = datum {
 }
 
 fun Metrics.Dimension.asProtocolBuffersDimension(): Dimension = when (this) {
-    is Metrics.Dimension.Bool -> {
+    is Metrics.Dimension.Boolean -> {
         dimension { boolean = value }
     }
-    is Metrics.Dimension.Num -> {
+    is Metrics.Dimension.Number -> {
         dimension { number = value }
     }
-    is Metrics.Dimension.Str -> {
+    is Metrics.Dimension.String -> {
         dimension { string = value }
     }
 }
