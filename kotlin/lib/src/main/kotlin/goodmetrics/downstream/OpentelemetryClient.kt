@@ -72,11 +72,10 @@ class OpentelemetryClient(
     private val stub: MetricsServiceGrpcKt.MetricsServiceCoroutineStub = MetricsServiceGrpcKt.MetricsServiceCoroutineStub(channel)
 
     suspend fun sendMetricsBatch(batch: List<Metrics>) {
+        val resourceMetricsBatch = asResourceMetrics(batch)
         stub.export(
             exportMetricsServiceRequest {
-                resourceMetrics.add(
-                    asResourceMetrics(batch)
-                )
+                resourceMetrics.add(resourceMetricsBatch)
             }
         )
     }
@@ -95,27 +94,25 @@ class OpentelemetryClient(
         return resourceMetrics {
             prescientResource?.let { this.resource = it }
             for (aggregate in batch) {
-                this.instrumentationLibraryMetrics.add(aggregate.asOtlpScopeMetrics())
+                this.scopeMetrics.add(aggregate.asOtlpScopeMetrics())
             }
         }
     }
 
-    private fun AggregatedBatch.asOtlpScopeMetrics(): InstrumentationLibraryMetrics = instrumentationLibraryMetrics {
-        instrumentationLibrary = library
+    private fun AggregatedBatch.asOtlpScopeMetrics(): ScopeMetrics = scopeMetrics {
+        scope = library
         metrics.addAll(this@asOtlpScopeMetrics.asGoofyOtlpMetricSequence().asIterable())
     }
 
-    private fun asResourceMetrics(batch: List<Metrics>): ResourceMetrics {
-        return resourceMetrics {
-            prescientResource?.let { this.resource = it }
-            for (metric in batch) {
-                instrumentationLibraryMetrics.add(asScopeMetrics(batch))
-            }
+    private fun asResourceMetrics(batch: List<Metrics>): ResourceMetrics = resourceMetrics {
+        prescientResource?.let { this.resource = it }
+        for (metric in batch) {
+            this.scopeMetrics.add(asScopeMetrics(batch))
         }
     }
 
-    private fun asScopeMetrics(batch: List<Metrics>): InstrumentationLibraryMetrics = instrumentationLibraryMetrics {
-        instrumentationLibrary = library
+    private fun asScopeMetrics(batch: List<Metrics>): ScopeMetrics = scopeMetrics {
+        scope = library
         metrics.addAll(batch.asSequence().flatMap { it.asGoofyOtlpMetricSequence() }.asIterable())
     }
 
@@ -211,7 +208,7 @@ class OpentelemetryClient(
         })
     }
 
-    private val library = instrumentationLibrary {
+    private val library = instrumentationScope {
         name = "goodmetrics_kotlin"
         version = OpentelemetryClient::class.java.`package`.implementationVersion ?: "development"
     }
