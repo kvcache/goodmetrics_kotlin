@@ -19,7 +19,7 @@ package opentelemetry.proto.resource.v1;
 import "opentelemetry/proto/common/v1/common.proto";
 
 option java_multiple_files = true;
-option java_package = "io.opentelemetry.proto.resource.v1";
+option java_package = "goodmetrics.io.opentelemetry.proto.resource.v1";
 option java_outer_classname = "ResourceProto";
 option go_package = "go.opentelemetry.io/proto/otlp/resource/v1";
 

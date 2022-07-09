@@ -19,7 +19,7 @@ package opentelemetry.proto.collector.metrics.v1;
 import "opentelemetry/proto/metrics/v1/metrics.proto";
 
 option java_multiple_files = true;
-option java_package = "io.opentelemetry.proto.collector.metrics.v1";
+option java_package = "goodmetrics.io.opentelemetry.proto.collector.metrics.v1";
 option java_outer_classname = "MetricsServiceProto";
 option go_package = "go.opentelemetry.io/proto/otlp/collector/metrics/v1";
 

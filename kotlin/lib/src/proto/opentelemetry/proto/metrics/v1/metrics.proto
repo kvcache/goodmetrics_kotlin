@@ -20,7 +20,7 @@ import "opentelemetry/proto/common/v1/common.proto";
 import "opentelemetry/proto/resource/v1/resource.proto";
 
 option java_multiple_files = true;
-option java_package = "io.opentelemetry.proto.metrics.v1";
+option java_package = "goodmetrics.io.opentelemetry.proto.metrics.v1";
 option java_outer_classname = "MetricsProto";
 option go_package = "go.opentelemetry.io/proto/otlp/metrics/v1";
 

@@ -8,11 +8,11 @@ import io.grpc.*
 import io.grpc.netty.GrpcSslContexts
 import io.grpc.netty.NettyChannelBuilder
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory
-import io.opentelemetry.proto.collector.metrics.v1.MetricsServiceGrpcKt
-import io.opentelemetry.proto.collector.metrics.v1.exportMetricsServiceRequest
-import io.opentelemetry.proto.common.v1.*
-import io.opentelemetry.proto.metrics.v1.*
-import io.opentelemetry.proto.resource.v1.resource
+import goodmetrics.io.opentelemetry.proto.collector.metrics.v1.MetricsServiceGrpcKt
+import goodmetrics.io.opentelemetry.proto.collector.metrics.v1.exportMetricsServiceRequest
+import goodmetrics.io.opentelemetry.proto.common.v1.*
+import goodmetrics.io.opentelemetry.proto.metrics.v1.*
+import goodmetrics.io.opentelemetry.proto.resource.v1.resource
 
 
 sealed interface PrescientDimensions {
