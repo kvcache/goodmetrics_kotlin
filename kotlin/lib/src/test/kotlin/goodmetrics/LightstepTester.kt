@@ -86,7 +86,7 @@ private suspend fun runPreaggregatedExample(client: OpentelemetryClient) = corou
         // Run a high frequency service api. We'll call it high_frequency_api
         ++i
         try {
-            preaggregatedFactory.record("high_frequency_api") { metrics ->
+            preaggregatedFactory.record("api_100hz") { metrics ->
                 metrics.dimension("a_dimension", i % 8)
                 metrics.distribution("random", ThreadLocalRandom.current().nextLong(4, 6))
 

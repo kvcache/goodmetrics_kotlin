@@ -14,6 +14,7 @@ import goodmetrics.io.opentelemetry.proto.common.v1.*
 import goodmetrics.io.opentelemetry.proto.metrics.v1.*
 import goodmetrics.io.opentelemetry.proto.resource.v1.resource
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 
 sealed interface PrescientDimensions {
@@ -180,15 +181,8 @@ class OpentelemetryClient(
                         name = "${this@asGoofyOtlpMetricSequence.name}_$measurementName"
                         unit = "1"
                         gauge = gauge {
-                            this.dataPoints.add(numberDataPoint {
-                                this.timeUnixNano = timestampNanos
-                                attributes.addAll(otlpDimensions.asIterable())
-                                if (value is Long) {
-                                    asInt = value
-                                } else {
-                                    asDouble = value.toDouble()
-                                }
-                            })
+                            // TODO: Get the width on this from the actual total time regardless of whether totaltime was reported
+                            this.dataPoints.add(newNumberDataPoint(value, timestampNanos, 1.seconds, otlpDimensions.asIterable()))
                         }
                     }
                 )
@@ -246,7 +240,7 @@ class OpentelemetryClient(
             startTimeUnixNano = timestampNanos - aggregationWidth.inWholeNanoseconds
             timeUnixNano = timestampNanos
             val sorted = this@asOtlpHistogram.bucketCounts.toSortedMap()
-            // count = this@asOtlpHistogram.bucketCounts.values.sumOf { it.sum() }
+            count = this@asOtlpHistogram.bucketCounts.values.sumOf { it.sum() }
             explicitBounds.addAll(sorted.keys.asSequence().map { it.toDouble() }.asIterable())
             bucketCounts.addAll(sorted.values.map { it.sum() })
             bucketCounts.add(0) // because OTLP is _stupid_ and defined histogram format to have an implicit infinity bucket.
