@@ -32,6 +32,7 @@ typealias MetricPositions = Map<
 
 data class AggregatedBatch(
     val timestampNanos: Long,
+    val aggregationWidth: Duration,
     val metric: String,
     val positions: MetricPositions,
 )
@@ -78,6 +79,7 @@ class Aggregator(
                     emit(
                         AggregatedBatch(
                             timestampNanos = lastEmit * 1000000,
+                            aggregationWidth = aggregationWidth,
                             metric = metric,
                             positions = positions,
                         )

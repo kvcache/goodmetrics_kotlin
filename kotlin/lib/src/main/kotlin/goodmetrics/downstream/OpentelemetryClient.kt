@@ -13,6 +13,7 @@ import goodmetrics.io.opentelemetry.proto.collector.metrics.v1.exportMetricsServ
 import goodmetrics.io.opentelemetry.proto.common.v1.*
 import goodmetrics.io.opentelemetry.proto.metrics.v1.*
 import goodmetrics.io.opentelemetry.proto.resource.v1.resource
+import kotlin.time.Duration
 
 
 sealed interface PrescientDimensions {
@@ -125,13 +126,47 @@ class OpentelemetryClient(
                             metric {
                                 name = "${this@asGoofyOtlpMetricSequence.metric}_$measurementName"
                                 unit = "1"
-                                histogram = aggregation.asOtlpHistogram(otlpDimensions, this@asGoofyOtlpMetricSequence.timestampNanos)
+                                histogram = aggregation.asOtlpHistogram(otlpDimensions, this@asGoofyOtlpMetricSequence.timestampNanos, aggregationWidth)
                             }
                         )
                     }
-                    is Aggregation.StatisticSet -> TODO()
+                    is Aggregation.StatisticSet -> {
+                        yieldAll(aggregation.statisticSetToOtlp(this@asGoofyOtlpMetricSequence.metric, measurementName, timestampNanos, aggregationWidth, otlpDimensions))
+                    }
                 }
             }
+        }
+    }
+
+    private fun Aggregation.StatisticSet.statisticSetToOtlp(
+        metric: String,
+        measurementName: String,
+        timestampNanos: Long,
+        aggregationWidth: Duration,
+        dimensions: Iterable<KeyValue>,
+    ): Sequence<Metric> = sequence {
+        yield(statisticSetDataPoint(metric, measurementName, "min", min, timestampNanos, aggregationWidth, dimensions))
+        yield(statisticSetDataPoint(metric, measurementName, "max", max, timestampNanos, aggregationWidth, dimensions))
+        yield(statisticSetDataPoint(metric, measurementName, "sum", sum, timestampNanos, aggregationWidth, dimensions))
+        yield(statisticSetDataPoint(metric, measurementName, "count", count, timestampNanos, aggregationWidth, dimensions))
+    }
+
+    private fun statisticSetDataPoint(
+        metricName: String,
+        measurementName: String,
+        statisticSetComponent: String,
+        value: Number,
+        timestampNanos: Long,
+        aggregationWidth: Duration,
+        dimensions: Iterable<KeyValue>,
+    ): Metric = metric {
+        name = "${metricName}_${measurementName}_$statisticSetComponent"
+        unit = "1"
+        sum = sum {
+            isMonotonic = false
+            // because cumulative is bullshit
+            aggregationTemporality = AggregationTemporality.AGGREGATION_TEMPORALITY_DELTA
+            dataPoints.add(newNumberDataPoint(value, timestampNanos, aggregationWidth, dimensions))
         }
     }
 
@@ -171,6 +206,17 @@ class OpentelemetryClient(
         }
     }
 
+    private fun newNumberDataPoint(value: Number, timestampNanos: Long, aggregationWidth: Duration, dimensions: Iterable<KeyValue>) = numberDataPoint {
+        this.timeUnixNano = timestampNanos
+        this.startTimeUnixNano = timestampNanos - aggregationWidth.inWholeNanoseconds
+        attributes.addAll(dimensions)
+        if (value is Long) {
+            asInt = value
+        } else {
+            asDouble = value.toDouble()
+        }
+    }
+
     private fun Metrics.asOtlpHistogram(
         otlpDimensions: Iterable<KeyValue>,
         value: Long
@@ -191,18 +237,19 @@ class OpentelemetryClient(
     private fun Aggregation.Histogram.asOtlpHistogram(
         otlpDimensions: Iterable<KeyValue>,
         timestampNanos: Long,
+        aggregationWidth: Duration,
     ) = histogram {
         // Because cumulative is bullshit for service metrics. Change my mind.
         aggregationTemporality = AggregationTemporality.AGGREGATION_TEMPORALITY_DELTA
         dataPoints.add(histogramDataPoint {
             attributes.addAll(otlpDimensions)
-            startTimeUnixNano = 0
+            startTimeUnixNano = timestampNanos - aggregationWidth.inWholeNanoseconds
             timeUnixNano = timestampNanos
-            count = this@asOtlpHistogram.bucketCounts.values.sumOf { it.sum() }
-            sum = this@asOtlpHistogram.bucketCounts.entries.sumOf { (bucket, count) -> bucket * count.sum() }.toDouble()
             val sorted = this@asOtlpHistogram.bucketCounts.toSortedMap()
+            // count = this@asOtlpHistogram.bucketCounts.values.sumOf { it.sum() }
             explicitBounds.addAll(sorted.keys.asSequence().map { it.toDouble() }.asIterable())
             bucketCounts.addAll(sorted.values.map { it.sum() })
+            bucketCounts.add(0) // because OTLP is _stupid_ and defined histogram format to have an implicit infinity bucket.
         })
     }
 

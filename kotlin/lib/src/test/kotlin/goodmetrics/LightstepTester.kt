@@ -1,5 +1,6 @@
 package goodmetrics
 
+import goodmetrics.downstream.GrpcTrailerLoggerInterceptor
 import goodmetrics.downstream.OpentelemetryClient
 import goodmetrics.downstream.PrescientDimensions
 import goodmetrics.downstream.SecurityMode
@@ -9,7 +10,10 @@ import io.grpc.stub.MetadataUtils
 import kotlinx.coroutines.*
 import java.net.InetAddress
 import java.util.concurrent.ThreadLocalRandom
+import java.util.concurrent.atomic.AtomicReference
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.TimeSource
 
 fun main() {
     val lightstepIngestHost = "ingest.lightstep.com"
@@ -19,6 +23,10 @@ fun main() {
 
     val authHeader = io.grpc.Metadata()
     authHeader.put(io.grpc.Metadata.Key.of(lightstepAuthHeader, io.grpc.Metadata.ASCII_STRING_MARSHALLER), lightstepToken)
+
+    val trailersInterceptor = GrpcTrailerLoggerInterceptor { status, trailers ->
+        println("got trailers. Status: $status, Trailers: $trailers")
+    }
 
     val client = OpentelemetryClient.connect(
         sillyOtlpHostname = lightstepIngestHost,
@@ -32,7 +40,8 @@ fun main() {
         ),
         securityMode = SecurityMode.Insecure,
         interceptors = listOf(
-            MetadataUtils.newAttachHeadersInterceptor(authHeader)
+            MetadataUtils.newAttachHeadersInterceptor(authHeader),
+            trailersInterceptor
         )
     )
 
@@ -71,15 +80,25 @@ private suspend fun runPreaggregatedExample(client: OpentelemetryClient) = corou
     }
 
     var i = 0L
+    var timestamp = TimeSource.Monotonic.markNow()
+    val targetPeriod = 10.milliseconds
     while(true) {
         // Run a high frequency service api. We'll call it high_frequency_api
         ++i
         try {
             preaggregatedFactory.record("high_frequency_api") { metrics ->
                 metrics.dimension("a_dimension", i % 8)
-                metrics.distribution("random", ThreadLocalRandom.current().nextLong(4, 400))
-                delay(ThreadLocalRandom.current().nextLong(0, 3))
+                metrics.distribution("random", ThreadLocalRandom.current().nextLong(4, 6))
+
+                metrics.measure("small_random", ThreadLocalRandom.current().nextLong(4, 40))
             }
+            val waitTime = -((timestamp + targetPeriod).elapsedNow())
+            if (waitTime.isPositive()) {
+                delay(waitTime)
+            } else {
+                println(waitTime)
+            }
+            timestamp += targetPeriod
         } catch (e: Exception) {
             println("it broke while recording")
             e.printStackTrace()
