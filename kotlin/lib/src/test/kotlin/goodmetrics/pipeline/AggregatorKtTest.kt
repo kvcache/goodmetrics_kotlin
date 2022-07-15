@@ -4,38 +4,25 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class AggregatorKtTest {
-
-    @Test
-    fun testZero() {
-        assertEquals(0, bucket(0))
-    }
-
-    @Test
-    fun testOne() {
-        assertEquals(1, bucket(1))
-    }
-
-    @Test
-    fun testOneHundred() {
-        assertEquals(100, bucket(100))
-    }
-
-    @Test
-    fun test101() {
-        assertEquals(110, bucket(101))
+    private fun assertBucket(expected: Long, value: Long) {
+        assertEquals(expected, bucket(value), "bucket( $value )")
     }
 
     @Test
     fun testBucket() {
-        assertEquals(2, bucket(2))
-        assertEquals(9, bucket(9))
-        assertEquals(10, bucket(10))
-        assertEquals(11, bucket(11))
-        assertEquals(99, bucket(99))
-        assertEquals(110, bucket(109))
-        assertEquals(110, bucket(110))
-        assertEquals(120, bucket(111))
-        assertEquals(8900, bucket(8891))
-        assertEquals(8900, bucket(8891))
+        assertBucket(0, 0)
+        assertBucket(1, 1)
+        assertBucket(2, 2)
+        assertBucket(9, 9)
+        assertBucket(10, 10)
+        assertBucket(11, 11)
+        assertBucket(99, 99)
+        assertBucket(100, 100)
+        assertBucket(110, 101)
+        assertBucket(110, 109)
+        assertBucket(110, 110)
+        assertBucket(120, 111)
+        assertBucket(8900, 8891)
+        assertBucket(8900, 8891)
     }
 }

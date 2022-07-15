@@ -140,7 +140,7 @@ fun Metrics.dimensionPosition(): DimensionPosition {
 }
 
 fun bucket(value: Long): Long {
-    if (value < 10L) return value
+    if (value < 100L) return value
     val power = log(value.toDouble(), 10.0)
     val effectivePower = max(0, (power - 1).toInt())
     val trashColumn = 10.0.pow(effectivePower).toLong()
