@@ -66,11 +66,25 @@ data class Metrics internal constructor(
         metricMeasurements[name] = value.toDouble()
     }
 
+    /**
+     * Distributions are positive only.
+     * This only records 1 position of a distribution per Metrics lifetime.
+     */
     fun distribution(name: String, value: Long) {
+        if (value < 0) {
+            return
+        }
         metricDistributions[name] = value
     }
 
+    /**
+     * Distributions are positive only.
+     * This only records 1 position of a distribution per Metrics lifetime.
+     */
     fun distribution(name: String, value: Int) {
+        if (value < 0) {
+            return
+        }
         metricDistributions[name] = value.toLong()
     }
 }
