@@ -31,6 +31,7 @@ import io.grpc.netty.GrpcSslContexts
 import io.grpc.netty.NettyChannelBuilder
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.LongAdder
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.nanoseconds
 import kotlin.time.Duration.Companion.seconds
@@ -235,8 +236,8 @@ class OpentelemetryClient(
         this.timeUnixNano = timestampNanos
         this.startTimeUnixNano = timestampNanos - aggregationWidth.inWholeNanoseconds
         attributes.addAll(dimensions)
-        if (value is Long) {
-            asInt = value
+        if (value is Long || value is LongAdder) {
+            asInt = value.toLong()
         } else {
             asDouble = value.toDouble()
         }
@@ -276,7 +277,7 @@ class OpentelemetryClient(
                 val sorted = this@asOtlpHistogram.bucketCounts.toSortedMap()
                 count = this@asOtlpHistogram.bucketCounts.values.sumOf { it.sum() }
                 explicitBounds.addAll(sorted.keys.asSequence().map { it.toDouble() }.asIterable())
-                bucketCounts.addAll(sorted.values.map { it.sum() })
+                bucketCounts.addAll(sorted.values.asSequence().map { it.sum() }.asIterable())
                 bucketCounts.add(0) // because OTLP is _stupid_ and defined histogram format to have an implicit infinity bucket.
             }
         )
