@@ -37,7 +37,7 @@ data class AggregatedBatch(
     val positions: MetricPositions,
 )
 
-private fun epochTime(epochMillis: Long) : TimeMark {
+private fun epochTime(epochMillis: Long): TimeMark {
     return object : TimeMark {
         override fun elapsedNow(): Duration {
             return (System.currentTimeMillis() - epochMillis).milliseconds
@@ -99,7 +99,7 @@ class Aggregator(
             val aggregation = metricPositions
                 .getOrPut(position, ::AggregationMap)
                 .getOrPut(name, Aggregation::StatisticSet)
-            when(aggregation) {
+            when (aggregation) {
                 is Aggregation.StatisticSet -> {
                     aggregation.accumulate(value)
                 }
@@ -114,7 +114,7 @@ class Aggregator(
             val aggregation = metricPositions
                 .getOrPut(position, ::AggregationMap)
                 .getOrPut(name, Aggregation::Histogram)
-            when(aggregation) {
+            when (aggregation) {
                 is Aggregation.StatisticSet -> {
                     // TODO: Logging
                 }
