@@ -9,12 +9,14 @@ import goodmetrics.pipeline.AggregatedBatch
 import goodmetrics.pipeline.Aggregator
 import goodmetrics.pipeline.BatchSender.Companion.launchSender
 import goodmetrics.pipeline.Batcher
+import goodmetrics.pipeline.MetricsSink
 import goodmetrics.pipeline.SynchronizingBuffer
 import io.grpc.Metadata
 import io.grpc.Status
 import io.grpc.stub.MetadataUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -103,6 +105,59 @@ class MetricsSetups private constructor() {
             return ConfiguredMetrics(
                 unaryMetricsFactory = unaryFactory,
                 preaggregatedMetricsFactory = preaggregatedFactory,
+            )
+        }
+
+        /**
+         * The simplest configuration of metrics - it sends what you record, when you finish
+         * recording it.
+         *
+         * Calling `metricsFactory.record { metrics -> [...] }` will see goodmetrics invoke
+         * lightstep's ingest API _synchronously_ within the `}` scope end. If you are using
+         * this in Lambda to record an execution, it will report before the execution completes.
+         *
+         * If you want preaggregated metrics in lambda or multiple recorded workflows per lambda
+         * execution you might need to do some work - but probably you just wish you could emit
+         * 1 row with a bunch of measurements per execution and this does that.
+         */
+        fun CoroutineScope.lightstepNativeOtlpButItSendsMetricsUponRecordingForLambda(
+            lightstepAccessToken: String,
+            prescientDimensions: PrescientDimensions,
+            logError: (message: String, exception: Exception) -> Unit,
+            onLightstepTrailers: (Status, Metadata) -> Unit = { status, trailers ->
+                println("got trailers from lightstep. Status: $status, Trailers: $trailers")
+            },
+            lightstepUrl: String = "ingest.lightstep.com",
+            lightstepPort: Int = 443,
+            lightstepConnectionSecurityMode: SecurityMode = SecurityMode.Tls,
+            timeout: Duration = 5.seconds,
+            onSendUnary: (List<Metrics>) -> Unit = {},
+        ): MetricsFactory {
+            val client = opentelemetryClient(
+                lightstepAccessToken,
+                lightstepUrl,
+                lightstepPort,
+                prescientDimensions,
+                lightstepConnectionSecurityMode,
+                onLightstepTrailers,
+                timeout
+            )
+
+            val unarySink = MetricsSink { metrics ->
+                runBlocking {
+                    onSendUnary(listOf(metrics))
+                    try {
+                        client.sendMetricsBatch(listOf(metrics))
+                    } catch (e: Exception) {
+                        logError("error while sending blocking metrics", e)
+                    }
+                }
+            }
+
+            return MetricsFactory(
+                sink = unarySink,
+                timeSource = NanoTimeSource.preciseNanoTime,
+                totaltimeType = MetricsFactory.TotaltimeType.DistributionMicroseconds,
             )
         }
 
