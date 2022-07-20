@@ -6,8 +6,8 @@ on:
         description: "Release tag to publish"
         required: true
 jobs:
-  build:
-    name: build
+  dorelease:
+    name: release
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -17,7 +17,7 @@ jobs:
       - uses: gradle/gradle-build-action@v2
         with:
           gradle-version: wrapper
-      - name: Setup and execute Gradle 'test' task
+      - name: publish to sonatype
         env:
           SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
           SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
