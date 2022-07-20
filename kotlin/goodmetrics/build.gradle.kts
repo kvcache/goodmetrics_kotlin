@@ -1,4 +1,9 @@
-import com.google.protobuf.gradle.*
+import com.google.protobuf.gradle.builtins
+import com.google.protobuf.gradle.generateProtoTasks
+import com.google.protobuf.gradle.id
+import com.google.protobuf.gradle.plugins
+import com.google.protobuf.gradle.protobuf
+import com.google.protobuf.gradle.protoc
 
 plugins {
     id("org.jetbrains.kotlin.jvm")
@@ -8,8 +13,22 @@ plugins {
     // Apply the java-library plugin for API and implementation separation.
     `java-library`
     `maven-publish`
+    signing
 
     idea
+}
+
+group = "com.kvc0"
+version = System.getenv("VERSION") ?: "SNAPSHOT"
+
+val signingKey = System.getenv("SIGNING_KEY")
+val signingPassword = System.getenv("SIGNING_PASSWORD")
+val ossrhUsername = System.getenv("OSSRH_USERNAME")
+val ossrhPassword = System.getenv("OSSRH_PASSWORD")
+
+java {
+    withJavadocJar()
+    withSourcesJar()
 }
 
 repositories {
@@ -33,7 +52,6 @@ dependencies {
     implementation("io.grpc:grpc-kotlin-stub:$grpcKtVersion")
     implementation("io.grpc:grpc-protobuf:$grpcVersion")
     implementation("com.google.protobuf:protobuf-kotlin:$protoVersion")
-
 
     if (JavaVersion.current().isJava9Compatible) {
         // Workaround for @javax.annotation.Generated
@@ -89,9 +107,7 @@ protobuf {
 publishing {
     publications {
         create<MavenPublication>("client") {
-            groupId = "io.goodmetrics"
-            artifactId = "client"
-            version = "0.1.0"
+            artifactId = "goodmetrics-kotlin"
 
             println("components:")
             for (c in components) {
@@ -99,12 +115,20 @@ publishing {
             }
             from(components["kotlin"])
 
+            versionMapping {
+                usage("java-api") {
+                    fromResolutionOf("runtimeClasspath")
+                }
+                usage("java-runtime") {
+                    fromResolutionResult()
+                }
+            }
+
             pom {
-                name.set("Good metrics")
+                name.set("goodmetrics")
                 description.set("A metrics recording library that is good")
-                url.set("https://github.com/WarriorOfWire/goodmetrics_kotlin/blob/main/README.md")
-                properties.set(mapOf(
-                ))
+                url.set("https://github.com/kvc0/goodmetrics_kotlin/blob/main/README.md")
+                properties.set(mapOf())
                 licenses {
                     license {
                         name.set("The Apache License, Version 2.0")
@@ -119,11 +143,41 @@ publishing {
                     }
                 }
                 scm {
-                    connection.set("scm:git:git://github.com:WarriorOfWire/goodmetrics_kotlin.git")
-                    developerConnection.set("scm:git:ssh://git@github.com:WarriorOfWire/goodmetrics_kotlin.git")
-                    url.set("https://github.com/WarriorOfWire/goodmetrics_kotlin")
+                    connection.set("scm:git:git://github.com:kvc0/goodmetrics_kotlin.git")
+                    developerConnection.set("scm:git:ssh://git@github.com:kvc0/goodmetrics_kotlin.git")
+                    url.set("https://github.com/kvc0/goodmetrics_kotlin")
                 }
             }
         }
+    }
+    repositories {
+        maven {
+            name = "sonatype"
+            // change URLs to point to your repos, e.g. http://my.org/repo
+            val releasesRepoUrl = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
+            val snapshotsRepoUrl = uri("https://s01.oss.sonatype.org/content/repositories/snapshots/")
+            url = if (version.toString().endsWith("SNAPSHOT")) snapshotsRepoUrl else releasesRepoUrl
+
+            credentials {
+                username = ossrhUsername
+                password = ossrhPassword
+            }
+        }
+    }
+}
+
+signing {
+    useInMemoryPgpKeys(signingKey, signingPassword)
+    println("\npublications:")
+    for (p in publishing.publications) {
+        println("  ${p.name}")
+    }
+
+    sign(publishing.publications["client"])
+}
+
+tasks.javadoc {
+    if (JavaVersion.current().isJava9Compatible) {
+        (options as StandardJavadocDocletOptions).addBooleanOption("html5", true)
     }
 }
