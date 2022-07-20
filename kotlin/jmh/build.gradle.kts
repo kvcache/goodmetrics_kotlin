@@ -21,7 +21,7 @@ dependencies {
     jmhImplementation("org.openjdk.jmh:jmh-core:1.34")
     jmhImplementation("org.openjdk.jmh:jmh-generator-annprocess:1.34")
 
-    implementation(project(":kotlin:lib"))
+    implementation(project(":kotlin:goodmetrics"))
 }
 
 kotlin {

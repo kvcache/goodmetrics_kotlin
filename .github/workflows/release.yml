@@ -1,0 +1,34 @@
+name: Release
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Release tag to publish"
+        required: true
+jobs:
+  build:
+    name: build
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: gradle/gradle-build-action@v2
+        with:
+          gradle-version: wrapper
+      - name: Setup and execute Gradle 'test' task
+        env:
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+          SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
+          OSSRH_USER: ${{ secrets.OSSRH_USER }}
+          OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
+          VERSION: ${{ github.event.inputs.release_tag }}
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: publishClientPublicationToSonatypeRepository
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: Package
+          path: kotlin/lib/build/libs
