@@ -9,7 +9,7 @@ dispatcher if you don't use coroutines already. If you do then you probably know
 where you want to put the long-lived background job that emits metrics for your app.
 
 # How to use
-Run [the goodmetrics server](https://github.com/WarriorOfWire/goodmetrics) on localhost.
+Run [the goodmetrics server](https://github.com/kvc0/goodmetrics) on localhost.
 
 ## Add dependency
 ```kotlin
