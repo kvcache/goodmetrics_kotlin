@@ -26,7 +26,7 @@ jobs:
           VERSION: ${{ github.event.inputs.release_tag }}
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: publishClientPublicationToSonatypeRepository
+          arguments: publishToSonatype closeSonatypeStagingRepository # TODO closeAndReleaseStagingRepository
 
       - uses: actions/upload-artifact@v3
         with:
