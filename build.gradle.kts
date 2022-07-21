@@ -9,12 +9,17 @@ val ossrhUsername = System.getenv("OSSRH_USERNAME")
 val ossrhPassword = System.getenv("OSSRH_PASSWORD")
 
 fun gitVersion(): String {
-    val stdout = java.io.ByteArrayOutputStream()
-    exec {
-        commandLine = listOf("git", "describe", "--tags")
-        standardOutput = stdout
+    try {
+        val stdout = java.io.ByteArrayOutputStream()
+        exec {
+            commandLine = listOf("git", "describe", "--tags")
+            standardOutput = stdout
+        }
+        return stdout.toString().trim()
+    } catch (e: Exception) {
+        print("git failed: $e")
+        return "unknown"
     }
-    return stdout.toString().trim()
 }
 
 nexusPublishing {
