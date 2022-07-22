@@ -31,4 +31,4 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
           name: Package
-          path: kotlin/lib/build/libs
+          path: kotlin/goodmetrics/build/libs/
