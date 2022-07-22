@@ -120,7 +120,7 @@ class MetricsSetups private constructor() {
          * execution you might need to do some work - but probably you just wish you could emit
          * 1 row with a bunch of measurements per execution and this does that.
          */
-        fun CoroutineScope.lightstepNativeOtlpButItSendsMetricsUponRecordingForLambda(
+        fun lightstepNativeOtlpButItSendsMetricsUponRecordingForLambda(
             lightstepAccessToken: String,
             prescientDimensions: PrescientDimensions,
             logError: (message: String, exception: Exception) -> Unit,
