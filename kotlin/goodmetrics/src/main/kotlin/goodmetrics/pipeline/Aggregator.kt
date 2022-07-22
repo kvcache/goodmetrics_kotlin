@@ -140,7 +140,7 @@ fun Metrics.dimensionPosition(): DimensionPosition {
 }
 
 fun bucket(value: Long): Long {
-    if (value < 100L) return value
+    if (value < 100L) return max(0, value)
     val power = log(value.toDouble(), 10.0)
     val effectivePower = max(0, (power - 1).toInt())
     val trashColumn = 10.0.pow(effectivePower).toLong()
@@ -150,6 +150,16 @@ fun bucket(value: Long): Long {
     } else {
         value + trashColumn - trash
     }
+}
+
+fun bucketBelow(valueIn: Long): Long {
+    val value = valueIn - 1
+    if (value < 100L) return max(0, value)
+    val power = log(value.toDouble(), 10.0)
+    val effectivePower = max(0, (power - 0.00001 - 1).toInt())
+    val trashColumn = 10.0.pow(effectivePower).toLong()
+    val trash = value % trashColumn
+    return value - trash
 }
 
 sealed interface Aggregation {
