@@ -23,6 +23,7 @@ import goodmetrics.io.opentelemetry.proto.resource.v1.resource
 import goodmetrics.pipeline.AggregatedBatch
 import goodmetrics.pipeline.Aggregation
 import goodmetrics.pipeline.bucket
+import goodmetrics.pipeline.bucketBelow
 import io.grpc.CallOptions
 import io.grpc.ClientInterceptor
 import io.grpc.Deadline
@@ -255,7 +256,25 @@ class OpentelemetryClient(
                 startTimeUnixNano = timestampNanos - (System.nanoTime() - startNanoTime) // approximate, whatever.
                 timeUnixNano = timestampNanos
                 count = 1
-                explicitBounds.add(bucket(value).toDouble())
+
+                val bucketValue = bucket(value)
+                if (0 < bucketValue) {
+                    // This little humdinger is here so Lightstep can interpret the boundary for the _real_ measurement
+                    // below. It's similar to the 0 that opentelemetry demands, but different in that it is actually a
+                    // reasonable ask.
+                    // Lightstep has an internal representation of histograms & while I don't pretend  to understand
+                    // how they've implemented them, they told me that they interpret the absence of a lower bounding
+                    // bucket as an infinite lower bound. That's not consistent with my read of otlp BUT it makes
+                    // infinitely more sense than imposing an upper infinity bucket upon your protocol.
+                    // Prometheus is a cataclysm from which there is no redemption: It ruins developers' minds with
+                    // its broken and much lauded blunders; it shames my profession by its protocol as well as those
+                    // spawned through its vile influence and disappoints the thoughtful by its existence.
+                    // But, you know, this particular thing for Lightstep seems fine because there's technical merit.
+                    explicitBounds.add(bucketBelow(value).toDouble())
+                    bucketCounts.add(0)
+                }
+
+                explicitBounds.add(bucketValue.toDouble())
                 bucketCounts.add(1)
                 bucketCounts.add(0) // otlp go die in a fire
             }
@@ -275,9 +294,22 @@ class OpentelemetryClient(
                 startTimeUnixNano = timestampNanos - aggregationWidth.inWholeNanoseconds
                 timeUnixNano = timestampNanos
                 val sorted = this@asOtlpHistogram.bucketCounts.toSortedMap()
+
+                if (sorted.isNotEmpty() && 0 < sorted.firstKey()) {
+                    // Again, a reasonable request from Lightstep to work around their lower-infinity interpretation
+                    // of histogram data. Goodmetrics sends sparse histograms and if lightstep has further issues
+                    // parsing these I might have to expand this to fill in 0's for "missing" buckets or delimit
+                    // empty ranges with 0'd out buckets. They haven't asked for that yet though so I'm not doing it.
+                    explicitBounds.add(bucketBelow(sorted.firstKey()).toDouble())
+                    bucketCounts.add(0)
+                }
+
                 count = this@asOtlpHistogram.bucketCounts.values.sumOf { it.sum() }
-                explicitBounds.addAll(sorted.keys.asSequence().map { it.toDouble() }.asIterable())
-                bucketCounts.addAll(sorted.values.asSequence().map { it.sum() }.asIterable())
+                for ((bucket, count) in sorted) {
+                    explicitBounds.add(bucket.toDouble())
+                    bucketCounts.add(count.sum())
+                }
+
                 bucketCounts.add(0) // because OTLP is _stupid_ and defined histogram format to have an implicit infinity bucket.
             }
         )
