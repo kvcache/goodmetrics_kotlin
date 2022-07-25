@@ -13,15 +13,8 @@ Run [the goodmetrics server](https://github.com/kvc0/goodmetrics) on localhost.
 
 ## Add dependency
 ```kotlin
-repositories {
-    maven {
-        name = "jitpack"
-        setUrl("https://jitpack.io")
-    }
-}
-
 dependencies {
-    implementation("com.github.WarriorOfWire:goodmetrics_kotlin:$goodmetricsVersion")
+    implementation("com.kvc0:goodmetrics-kotlin:$goodmetricsVersion")
 }
 ```
 
@@ -33,10 +26,14 @@ fun main() {
 
     for (i in 1..1000) {
         metricsFactory.record("demo_app") { metrics ->
-            metrics.measureI("iteration", i)
-            metrics.dimensionBool("random_boolean", Random.nextBoolean())
-            metrics.measureF("random_float", Random.nextFloat())
-            metrics.dimensionString("host", Inet4Address.getLocalHost().hostName)
+            metrics.measure("iteration", i)
+            metrics.dimension("random_boolean", Random.nextBoolean())
+            metrics.measure("random_float", Random.nextFloat())
+            metrics.dimension("host", Inet4Address.getLocalHost().hostName)
+            // for heatmaps and percentiles, record a distribution.
+            // Note that metricsFactory.record {} automatically records a
+            //  "totaltime" distribution by default.
+            metrics.distribution("file_size", getSizeOfFile(i))
         }
     }
     metricsBackgroundScope.cancel()
