@@ -67,6 +67,7 @@ class OpentelemetryClient(
     private val channel: ManagedChannel,
     private val prescientDimensions: PrescientDimensions,
     private val timeout: Duration,
+    private val logRawPayload: (ResourceMetrics) -> Unit = { }
 ) {
     companion object {
         fun connect(
@@ -79,6 +80,7 @@ class OpentelemetryClient(
              */
             interceptors: List<ClientInterceptor>,
             timeout: Duration = 5.seconds,
+            logRawPayload: (ResourceMetrics) -> Unit = { },
         ): OpentelemetryClient {
             val channelBuilder = NettyChannelBuilder.forAddress(sillyOtlpHostname, port)
             when (securityMode) {
@@ -98,7 +100,7 @@ class OpentelemetryClient(
                 }
             }
             channelBuilder.intercept(interceptors)
-            return OpentelemetryClient(channelBuilder.build(), prescientDimensions, timeout)
+            return OpentelemetryClient(channelBuilder.build(), prescientDimensions, timeout, logRawPayload)
         }
     }
     private fun stub(): MetricsServiceGrpcKt.MetricsServiceCoroutineStub = MetricsServiceGrpcKt.MetricsServiceCoroutineStub(
@@ -109,6 +111,7 @@ class OpentelemetryClient(
 
     suspend fun sendMetricsBatch(batch: List<Metrics>) {
         val resourceMetricsBatch = asResourceMetrics(batch)
+        logRawPayload(resourceMetricsBatch)
         stub().export(
             exportMetricsServiceRequest {
                 resourceMetrics.add(resourceMetricsBatch)
@@ -118,6 +121,7 @@ class OpentelemetryClient(
 
     suspend fun sendPreaggregatedBatch(batch: List<AggregatedBatch>) {
         val resourceMetricsBatch = asResourceMetricsFromBatch(batch)
+        logRawPayload(resourceMetricsBatch)
         stub().export(
             exportMetricsServiceRequest {
                 resourceMetrics.add(resourceMetricsBatch)
@@ -295,17 +299,21 @@ class OpentelemetryClient(
                 timeUnixNano = timestampNanos
                 val sorted = this@asOtlpHistogram.bucketCounts.toSortedMap()
 
-                if (sorted.isNotEmpty() && 0 < sorted.firstKey()) {
-                    // Again, a reasonable request from Lightstep to work around their lower-infinity interpretation
-                    // of histogram data. Goodmetrics sends sparse histograms and if lightstep has further issues
-                    // parsing these I might have to expand this to fill in 0's for "missing" buckets or delimit
-                    // empty ranges with 0'd out buckets. They haven't asked for that yet though so I'm not doing it.
-                    explicitBounds.add(bucketBelow(sorted.firstKey()).toDouble())
-                    bucketCounts.add(0)
-                }
-
                 count = this@asOtlpHistogram.bucketCounts.values.sumOf { it.sum() }
                 for ((bucket, count) in sorted) {
+                    val below = bucketBelow(bucket)
+                    if (0 < below && !this@asOtlpHistogram.bucketCounts.containsKey(below)) {
+                        // And THIS little humdinger is here so Lightstep can interpret the boundary for all non-zero
+                        // buckets. Lightstep histogram implementation wants non-zero-count ranges to have lower bounds.
+                        // Not how I've done histograms in the past but :shrug: whatever, looks like the opentelemetry
+                        // metrics spec is at fault for this one; they refused to improve the specification from
+                        // openmetrics, which was bastardized in turn by that root of all monitoring evil: Prometheus.
+                        // Lightstep is a business which must adhere to de-facto standards, so I don't fault them for
+                        // this; though I would love it if they were to also adopt a good protocol.
+                        explicitBounds.add(below.toDouble())
+                        bucketCounts.add(0L)
+                    }
+
                     explicitBounds.add(bucket.toDouble())
                     bucketCounts.add(count.sum())
                 }
