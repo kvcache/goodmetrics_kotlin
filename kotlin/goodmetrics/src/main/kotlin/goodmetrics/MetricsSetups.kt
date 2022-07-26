@@ -5,6 +5,7 @@ import goodmetrics.downstream.GrpcTrailerLoggerInterceptor
 import goodmetrics.downstream.OpentelemetryClient
 import goodmetrics.downstream.PrescientDimensions
 import goodmetrics.downstream.SecurityMode
+import goodmetrics.io.opentelemetry.proto.metrics.v1.ResourceMetrics
 import goodmetrics.pipeline.AggregatedBatch
 import goodmetrics.pipeline.Aggregator
 import goodmetrics.pipeline.BatchSender.Companion.launchSender
@@ -78,6 +79,12 @@ class MetricsSetups private constructor() {
             preaggregatedBatchMaxAge: Duration = 10.seconds,
             onSendUnary: (List<Metrics>) -> Unit = {},
             onSendPreaggregated: (List<AggregatedBatch>) -> Unit = {},
+            /**
+             * This is verbose but can be helpful when debugging lightstep data format issues.
+             * It shows you exactly what protocol buffers structure is sent.
+             * Log with caution.
+             */
+            logRawPayload: (ResourceMetrics) -> Unit = {},
         ): ConfiguredMetrics {
             val client = opentelemetryClient(
                 lightstepAccessToken,
@@ -86,7 +93,8 @@ class MetricsSetups private constructor() {
                 prescientDimensions,
                 lightstepConnectionSecurityMode,
                 onLightstepTrailers,
-                timeout
+                timeout,
+                logRawPayload,
             )
 
             val unarySink = configureBatchedUnaryLightstepSink(unaryBatchSizeMaxMetricsCount, unaryBatchMaxAge, client, logError, onSendUnary)
@@ -227,7 +235,8 @@ class MetricsSetups private constructor() {
             prescientDimensions: PrescientDimensions,
             lightstepConnectionSecurityMode: SecurityMode,
             onLightstepTrailers: (Status, Metadata) -> Unit,
-            timeout: Duration
+            timeout: Duration,
+            logRawPayload: (ResourceMetrics) -> Unit = { },
         ): OpentelemetryClient {
             val authHeader = Metadata()
             authHeader.put(
@@ -244,7 +253,8 @@ class MetricsSetups private constructor() {
                     MetadataUtils.newAttachHeadersInterceptor(authHeader),
                     GrpcTrailerLoggerInterceptor(onLightstepTrailers),
                 ),
-                timeout = timeout
+                timeout = timeout,
+                logRawPayload = logRawPayload,
             )
         }
     }
