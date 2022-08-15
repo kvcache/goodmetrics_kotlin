@@ -64,6 +64,7 @@ internal class MetricsTest {
         metrics.dimension("4", 17L)
         metrics.dimension("5", "a")
         metrics.dimension("6", "b")
+        metrics.dimensionBase2Bucketed("7", 42)
         metrics.assert(
             dimensions = mapOf(
                 "1" to Metrics.Dimension.Boolean("1", true),
@@ -72,6 +73,7 @@ internal class MetricsTest {
                 "4" to Metrics.Dimension.Number("4", 17),
                 "5" to Metrics.Dimension.String("5", "a"),
                 "6" to Metrics.Dimension.String("6", "b"),
+                "7" to Metrics.Dimension.Number("7", 64),
             )
         )
     }

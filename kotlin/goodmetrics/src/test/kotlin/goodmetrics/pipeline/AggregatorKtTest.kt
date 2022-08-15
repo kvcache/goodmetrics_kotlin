@@ -11,6 +11,10 @@ class AggregatorKtTest {
         assertEquals(expected, bucketBelow(value), "bucketBelow( $value )")
     }
 
+    private fun assertBucketBase2(expected: Long, value: Long) {
+        assertEquals(expected, bucketBase2(value), "bucket( $value )")
+    }
+
     @Test
     fun testBucket() {
         assertBucket(0, 0)
@@ -57,5 +61,56 @@ class AggregatorKtTest {
         assertBucketBelow(8800, 8891)
         assertBucketBelow(8800, 8891)
         assertBucketBelow(8900, 8901)
+    }
+
+    @Test
+    fun testBucketBase2() {
+        assertBucketBase2(0, 0)
+        assertBucketBase2(1, 1)
+        assertBucketBase2(2, 2)
+        assertBucketBase2(4, 3)
+        assertBucketBase2(4, 4)
+        assertBucketBase2(8, 5)
+        assertBucketBase2(16, 9)
+        assertBucketBase2(16, 10)
+        assertBucketBase2(16, 11)
+        assertBucketBase2(128, 99)
+        assertBucketBase2(128, 100)
+        assertBucketBase2(128, 101)
+        assertBucketBase2(128, 109)
+        assertBucketBase2(128, 110)
+        assertBucketBase2(128, 120)
+        assertBucketBase2(128, 121)
+        assertBucketBase2(128, 123)
+        assertBucketBase2(128, 128)
+        assertBucketBase2(256, 129)
+        assertBucketBase2(256, 130)
+        assertBucketBase2(128, 111)
+        assertBucketBase2(16384, 8891)
+        assertBucketBase2(16384, 8901)
+
+        assertBucketBase2(0, -0)
+        assertBucketBase2(0, -1)
+        assertBucketBase2(0, -2)
+        assertBucketBase2(0, -3)
+        assertBucketBase2(0, -4)
+        assertBucketBase2(0, -5)
+        assertBucketBase2(0, -9)
+        assertBucketBase2(0, -10)
+        assertBucketBase2(0, -11)
+        assertBucketBase2(0, -99)
+        assertBucketBase2(0, -100)
+        assertBucketBase2(0, -101)
+        assertBucketBase2(0, -109)
+        assertBucketBase2(0, -110)
+        assertBucketBase2(0, -120)
+        assertBucketBase2(0, -121)
+        assertBucketBase2(0, -123)
+        assertBucketBase2(0, -128)
+        assertBucketBase2(0, -129)
+        assertBucketBase2(0, -130)
+        assertBucketBase2(0, -111)
+        assertBucketBase2(0, -8891)
+        assertBucketBase2(0, -8901)
     }
 }

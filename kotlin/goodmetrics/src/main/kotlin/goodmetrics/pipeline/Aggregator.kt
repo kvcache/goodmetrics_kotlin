@@ -9,6 +9,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.DoubleAccumulator
 import java.util.concurrent.atomic.DoubleAdder
 import java.util.concurrent.atomic.LongAdder
+import kotlin.math.ceil
 import kotlin.math.log
 import kotlin.math.max
 import kotlin.math.pow
@@ -139,6 +140,9 @@ fun Metrics.dimensionPosition(): DimensionPosition {
         .toSet()
 }
 
+/**
+ * Base 10 2-significant-figures bucketing
+ */
 fun bucket(value: Long): Long {
     if (value < 100L) return max(0, value)
     val power = log(value.toDouble(), 10.0)
@@ -160,6 +164,14 @@ fun bucketBelow(valueIn: Long): Long {
     val trashColumn = 10.0.pow(effectivePower).toLong()
     val trash = value % trashColumn
     return value - trash
+}
+
+/**
+ * Base 2 bucketing. This is plain bucketing; no sub-steps, just the next highest base2 power of value.
+ */
+fun bucketBase2(value: Long): Long {
+    val power = ceil(log(value.toDouble(), 2.0))
+    return 2.0.pow(power).toLong()
 }
 
 sealed interface Aggregation {
