@@ -1,5 +1,7 @@
 package goodmetrics
 
+import goodmetrics.pipeline.bucketBase2
+
 /**
  * Not thread safe.
  */
@@ -48,6 +50,26 @@ data class Metrics internal constructor(
 
     fun dimension(dimension: String, value: String) {
         metricDimensions[dimension] = Dimension.String(dimension, value)
+    }
+
+    /**
+     * Record a dimension with a position based on log2(value).
+     * This method handles bucketing, just pass in a bytes count or whatever you need.
+     *
+     * This is a potentially expensive thing to use - you should carefully consider if
+     * you should use a distribution() instead. This will cause log2(maxvalue - minvalue)
+     * additional cardinality in your metrics. If you're using Goodmetrics and Timescale
+     * that's not a big deal - you'll buffer in memory for $reportInterval and ship it on.
+     * If you're using lightstep or something like that it's a factor to consider.
+     *
+     * You WANT to use this if you are trying to plot a latency BY request size.
+     * You DO NOT WANT to use this if you are trying to plot a latency or plot a
+     * request size.
+     *
+     * Positive values only.
+     */
+    fun dimensionBase2Bucketed(dimension: String, value: Long) {
+        metricDimensions[dimension] = Dimension.Number(dimension, bucketBase2(value))
     }
 
     fun measure(name: String, value: Long) {
