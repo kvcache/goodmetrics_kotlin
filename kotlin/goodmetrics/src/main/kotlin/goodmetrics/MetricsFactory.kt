@@ -11,6 +11,7 @@ import kotlin.contracts.contract
 enum class TimestampAt {
     // Stamp the metric at the start
     Start,
+
     // Stamp the metric at the end
     End,
 }
@@ -35,6 +36,10 @@ class MetricsFactory(
     @PublishedApi internal val timeSource: NanoTimeSource,
     private val totaltimeType: TotaltimeType
 ) {
+    /**
+     * Tools for making abstractions around the metrics factory other than the usual record{} pattern.
+     */
+    val internals: Internals = Internals(this)
     enum class TotaltimeType {
         /**
          * totaltime is a histogram (preferred)
@@ -60,25 +65,37 @@ class MetricsFactory(
         contract {
             callsInPlace(block, InvocationKind.EXACTLY_ONCE)
         }
-        val metrics = getMetrics(name, stampAt)
+        val metrics = internals.getMetrics(name, stampAt)
         try {
             return block(metrics)
         } finally {
-            emit(metrics)
+            internals.emit(metrics)
         }
     }
 
-    @PublishedApi internal fun getMetrics(name: String, stampAt: TimestampAt): Metrics {
-        val timestamp = when (stampAt) {
-            TimestampAt.Start -> timeSource.epochNanos()
-            TimestampAt.End -> -1
+    /**
+     * Tools for making abstractions around the metrics factory other than the usual record{} pattern.
+     */
+    class Internals internal constructor(private val self: MetricsFactory) {
+        /**
+         * For every getMetrics(), you need to also emit() that Metrics object via this same MetricsFactory.
+         */
+        fun getMetrics(name: String, stampAt: TimestampAt): Metrics {
+            val timestamp = when (stampAt) {
+                TimestampAt.Start -> self.timeSource.epochNanos()
+                TimestampAt.End -> -1
+            }
+            return Metrics(name, timestamp, System.nanoTime())
         }
-        return Metrics(name, timestamp, System.nanoTime())
-    }
 
-    @PublishedApi internal fun emit(metrics: Metrics) {
-        finalizeMetrics(metrics)
-        sink.emit(metrics)
+        /**
+         * Complete and release a Metrics to the configured downstream sink.
+         * If you don't emit() the metrics it will never show up downstream.
+         */
+        fun emit(metrics: Metrics) {
+            self.finalizeMetrics(metrics)
+            self.sink.emit(metrics)
+        }
     }
 
     private fun finalizeMetrics(metrics: Metrics) {

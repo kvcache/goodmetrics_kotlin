@@ -19,27 +19,27 @@ internal class MetricsTest {
     @Test
     fun testTimestampStart() {
         nowNanos = 13
-        val metrics = metricsFactory.getMetrics("test", TimestampAt.Start)
+        val metrics = metricsFactory.internals.getMetrics("test", TimestampAt.Start)
         metrics.assert(timestamp = 13)
     }
 
     @Test
     fun testTimestampEnd() {
         nowNanos = 13
-        val metrics = metricsFactory.getMetrics("test", TimestampAt.End)
+        val metrics = metricsFactory.internals.getMetrics("test", TimestampAt.End)
         metrics.assert(timestamp = -1)
 
         nowNanos = 17
-        metricsFactory.emit(metrics)
+        metricsFactory.internals.emit(metrics)
         metrics.assert(timestamp = 17)
     }
 
     @Test
     fun testEmitEmits() {
-        val metrics = metricsFactory.getMetrics("test", TimestampAt.End)
+        val metrics = metricsFactory.internals.getMetrics("test", TimestampAt.End)
         assertEquals(listOf(), emittedMetrics)
 
-        metricsFactory.emit(metrics)
+        metricsFactory.internals.emit(metrics)
         assertEquals(listOf(metrics), emittedMetrics)
     }
 
@@ -57,7 +57,7 @@ internal class MetricsTest {
 
     @Test
     fun testDimensionOverloads() {
-        val metrics = metricsFactory.getMetrics("test", TimestampAt.End)
+        val metrics = metricsFactory.internals.getMetrics("test", TimestampAt.End)
         metrics.dimension("1", true)
         metrics.dimension("2", false)
         metrics.dimension("3", 12L)
@@ -78,7 +78,7 @@ internal class MetricsTest {
 
     @Test
     fun testMeasureOverloads() {
-        val metrics = metricsFactory.getMetrics("test", TimestampAt.End)
+        val metrics = metricsFactory.internals.getMetrics("test", TimestampAt.End)
         metrics.measure("1", 1L)
         metrics.measure("2", 2L)
         metrics.measure("3", 3)
@@ -105,7 +105,7 @@ internal class MetricsTest {
 
     @Test
     fun testDistributionOverloads() {
-        val metrics = metricsFactory.getMetrics("test", TimestampAt.End)
+        val metrics = metricsFactory.internals.getMetrics("test", TimestampAt.End)
         metrics.distribution("1", 1L)
         metrics.distribution("2", 2L)
         metrics.distribution("3", 3)
