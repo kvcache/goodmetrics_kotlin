@@ -1,4 +1,4 @@
-# <img src="https://user-images.githubusercontent.com/3454741/151748581-1ad6c34c-f583-4813-b878-d19c98ec3427.png" width="108em" align="center"/> Good Metrics: Kotlin
+# <img src="https://user-images.githubusercontent.com/3454741/151748581-1ad6c34c-f583-4813-b878-d19c98ec3427.png" width="108em" align="center"/> Goodmetrics: Kotlin
 
 This is the way (to record metrics)
 
@@ -25,6 +25,7 @@ fun main() {
     val (emitterJob, metricsFactory) = metricsBackgroundScope.normalConfig()
 
     for (i in 1..1000) {
+        // I want to record information about each iteration of the loop so I'll record {} each iteration.
         metricsFactory.record("demo_app") { metrics ->
             metrics.measure("iteration", i)
             metrics.dimension("random_boolean", Random.nextBoolean())
