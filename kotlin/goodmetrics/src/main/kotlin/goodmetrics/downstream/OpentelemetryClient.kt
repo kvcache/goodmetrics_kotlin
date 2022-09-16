@@ -26,7 +26,6 @@ import goodmetrics.pipeline.bucket
 import goodmetrics.pipeline.bucketBelow
 import io.grpc.CallOptions
 import io.grpc.ClientInterceptor
-import io.grpc.Deadline
 import io.grpc.ManagedChannel
 import io.grpc.netty.GrpcSslContexts
 import io.grpc.netty.NettyChannelBuilder
@@ -56,6 +55,12 @@ enum class SecurityMode {
     Tls,
 }
 
+sealed interface CompressionMode {
+    object None : CompressionMode
+    object Gzip : CompressionMode
+    data class IKnowWhatIWant(val explicitMode: String) : CompressionMode
+}
+
 /**
  * This client should be used as a last resort, in defeat, if you
  * cannot use the goodmetrics protocol. Opentelemetry is highly
@@ -67,7 +72,8 @@ class OpentelemetryClient(
     private val channel: ManagedChannel,
     private val prescientDimensions: PrescientDimensions,
     private val timeout: Duration,
-    private val logRawPayload: (ResourceMetrics) -> Unit = { }
+    private val logRawPayload: (ResourceMetrics) -> Unit = { },
+    private val compressionMode: CompressionMode,
 ) {
     companion object {
         fun connect(
@@ -81,6 +87,7 @@ class OpentelemetryClient(
             interceptors: List<ClientInterceptor>,
             timeout: Duration = 5.seconds,
             logRawPayload: (ResourceMetrics) -> Unit = { },
+            compressionMode: CompressionMode = CompressionMode.None,
         ): OpentelemetryClient {
             val channelBuilder = NettyChannelBuilder.forAddress(sillyOtlpHostname, port)
             when (securityMode) {
@@ -100,14 +107,20 @@ class OpentelemetryClient(
                 }
             }
             channelBuilder.intercept(interceptors)
-            return OpentelemetryClient(channelBuilder.build(), prescientDimensions, timeout, logRawPayload)
+            return OpentelemetryClient(channelBuilder.build(), prescientDimensions, timeout, logRawPayload, compressionMode)
         }
     }
-    private fun stub(): MetricsServiceGrpcKt.MetricsServiceCoroutineStub = MetricsServiceGrpcKt.MetricsServiceCoroutineStub(
-        channel,
-        CallOptions.DEFAULT
-            .withDeadline(Deadline.after(timeout.inWholeMilliseconds, TimeUnit.MILLISECONDS))
-    )
+    private fun stub(): MetricsServiceGrpcKt.MetricsServiceCoroutineStub {
+        val defaultCallOptions = CallOptions.DEFAULT
+            .withDeadlineAfter(timeout.inWholeMilliseconds, TimeUnit.MILLISECONDS)
+        val callOptions = when (compressionMode) {
+            CompressionMode.None -> defaultCallOptions
+            CompressionMode.Gzip -> defaultCallOptions.withCompression("gzip")
+            is CompressionMode.IKnowWhatIWant -> defaultCallOptions.withCompression(compressionMode.explicitMode)
+        }
+
+        return MetricsServiceGrpcKt.MetricsServiceCoroutineStub(channel, callOptions)
+    }
 
     suspend fun sendMetricsBatch(batch: List<Metrics>) {
         val resourceMetricsBatch = asResourceMetrics(batch)

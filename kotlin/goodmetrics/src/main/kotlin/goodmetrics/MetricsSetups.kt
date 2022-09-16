@@ -1,5 +1,6 @@
 package goodmetrics
 
+import goodmetrics.downstream.CompressionMode
 import goodmetrics.downstream.GoodmetricsClient
 import goodmetrics.downstream.GrpcTrailerLoggerInterceptor
 import goodmetrics.downstream.OpentelemetryClient
@@ -85,6 +86,12 @@ class MetricsSetups private constructor() {
              * Log with caution.
              */
             logRawPayload: (ResourceMetrics) -> Unit = {},
+            /**
+             * Lightstep claims:
+             * > there is no compression on this traffic; I'm not sure what SDK you are using or if hand rolled but if you turn on compression this will go away.
+             * So I'll default the special lightstep configuration to use gzip compression. You can disable this if you want.
+             */
+            compressionMode: CompressionMode = CompressionMode.Gzip,
         ): ConfiguredMetrics {
             val client = opentelemetryClient(
                 lightstepAccessToken,
@@ -95,6 +102,7 @@ class MetricsSetups private constructor() {
                 onLightstepTrailers,
                 timeout,
                 logRawPayload,
+                compressionMode,
             )
 
             val unarySink = configureBatchedUnaryLightstepSink(unaryBatchSizeMaxMetricsCount, unaryBatchMaxAge, client, logError, onSendUnary)
@@ -140,6 +148,7 @@ class MetricsSetups private constructor() {
             lightstepConnectionSecurityMode: SecurityMode = SecurityMode.Tls,
             timeout: Duration = 5.seconds,
             onSendUnary: (List<Metrics>) -> Unit = {},
+            compressionMode: CompressionMode = CompressionMode.None,
         ): MetricsFactory {
             val client = opentelemetryClient(
                 lightstepAccessToken,
@@ -148,7 +157,8 @@ class MetricsSetups private constructor() {
                 prescientDimensions,
                 lightstepConnectionSecurityMode,
                 onLightstepTrailers,
-                timeout
+                timeout,
+                compressionMode = compressionMode,
             )
 
             val unarySink = MetricsSink { metrics ->
@@ -237,6 +247,7 @@ class MetricsSetups private constructor() {
             onLightstepTrailers: (Status, Metadata) -> Unit,
             timeout: Duration,
             logRawPayload: (ResourceMetrics) -> Unit = { },
+            compressionMode: CompressionMode,
         ): OpentelemetryClient {
             val authHeader = Metadata()
             authHeader.put(
@@ -255,6 +266,7 @@ class MetricsSetups private constructor() {
                 ),
                 timeout = timeout,
                 logRawPayload = logRawPayload,
+                compressionMode = compressionMode,
             )
         }
     }
