@@ -65,7 +65,22 @@ class MetricsFactory(
         contract {
             callsInPlace(block, InvocationKind.EXACTLY_ONCE)
         }
-        val metrics = internals.getMetrics(name, stampAt)
+        return recordWithBehavior(name, stampAt, MetricsBehavior.DEFAULT, block)
+    }
+
+    /**
+     * Passes a Metrics into your scope. Record your unit of work; when the scope exits
+     * the Metrics will be stamped with `totaltime` and emitted through the pipeline.
+     *
+     * Allows for setting specific MetricsBehaviors for the metric.
+     *
+     * If you don't want `totaltime` timeseries data, then specify `metricBehavior: MetricBehavior.NO_TOTALTIME`.
+     */
+    inline fun <T> recordWithBehavior(name: String, stampAt: TimestampAt = TimestampAt.Start, metricsBehavior: MetricsBehavior, block: (Metrics) -> T): T {
+        contract {
+            callsInPlace(block, InvocationKind.EXACTLY_ONCE)
+        }
+        val metrics = internals.getMetrics(name, stampAt, metricsBehavior)
         try {
             return block(metrics)
         } finally {
@@ -80,12 +95,12 @@ class MetricsFactory(
         /**
          * For every getMetrics(), you need to also emit() that Metrics object via this same MetricsFactory.
          */
-        fun getMetrics(name: String, stampAt: TimestampAt): Metrics {
+        fun getMetrics(name: String, stampAt: TimestampAt, metricsBehavior: MetricsBehavior = MetricsBehavior.DEFAULT): Metrics {
             val timestamp = when (stampAt) {
                 TimestampAt.Start -> self.timeSource.epochNanos()
                 TimestampAt.End -> -1
             }
-            return Metrics(name, timestamp, System.nanoTime())
+            return Metrics(name, timestamp, System.nanoTime(), metricsBehavior)
         }
 
         /**
@@ -101,6 +116,9 @@ class MetricsFactory(
     private fun finalizeMetrics(metrics: Metrics) {
         if (metrics.timestampNanos < 1) {
             metrics.timestampNanos = timeSource.epochNanos()
+        }
+        if (metrics.metricsBehavior == MetricsBehavior.NO_TOTALTIME) {
+            return
         }
         val duration = System.nanoTime() - metrics.startNanoTime
         when (totaltimeType) {
